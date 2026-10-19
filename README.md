@@ -89,5 +89,8 @@ Secara default file berikut **tidak** ditarik: `.git-ftp.log` dan `.env`
 - `.git-ftp-ignore` / `.git-ftp-include` - aturan file untuk deploy FTP.
 - `FORMAT_DATABASE.sql` - struktur tabel database.
 
+## Sourcecode
+https://g.co/gemini/share/0a9d1d95003c
+
 ## Catatan
 aktifakn pwa.
