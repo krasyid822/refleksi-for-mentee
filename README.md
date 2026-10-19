@@ -119,3 +119,4 @@ https://g.co/gemini/share/0a9d1d95003c
 
 ## Catatan
 aktifakn pwa. buat sistem increment build yang otomatis terpicu saat jalankan push.sh.
+buat script let-encrypt.sh untuk mengenkripsi semua key rahasia dan kuncinya di patch ke env.php.
