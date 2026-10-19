@@ -12,6 +12,7 @@ run.sh
 push.sh
 pull.sh
 opencode.json
+LICENSE
 sourcecode.md
 FORMAT_DATABASE.sql
 .env.example
