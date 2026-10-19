@@ -1,0 +1,17 @@
+# File yang TIDAK diunggah ke server FTP (pola glob).
+# git-ftp membaca file ini di samping .gitignore milik Git.
+
+# Berkas Git & konfigurasi FTP
+.gitignore
+.git-ftp-ignore
+.git-ftp-include
+
+# Berkas khusus pengembangan (tidak perlu di server)
+README.md
+run.sh
+push.sh
+pull.sh
+opencode.json
+sourcecode.md
+FORMAT_DATABASE.sql
+.env.example

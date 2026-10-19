@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Host</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
+        :root {
+            --ink: #0f172a;
+            --card: #f8fafc;
+            --outline: #1d4ed8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: #e2e8f0;
+            color: var(--ink);
+            padding: 10px;
+        }
+
+        .host-card {
+            border: 2px solid var(--outline);
+            border-radius: 12px;
+            background: var(--card);
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .status {
+            font-size: 0.82rem;
+            color: #334155;
+        }
+
+        .frame-holder {
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="host-card">
+        <span class="title">Audio Host Aktif</span>
+        <span class="status" id="status-text">Menunggu...</span>
+    </div>
+    <div id="yt-player" class="frame-holder" aria-hidden="true"></div>
+
+    <script>
+        (function () {
+            const VIDEO_ID = 'clXNZw73AAE';
+            const STORAGE_KEY = 'refleksi-ambient-audio-state';
+            const CHANNEL_NAME = 'refleksi-ambient-audio-channel';
+            const statusNode = document.getElementById('status-text');
+            const channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(CHANNEL_NAME) : null;
+
+            let player = null;
+            let playerReady = false;
+            let pendingCommand = null;
+
+            function announceState(isPlaying) {
+                localStorage.setItem(STORAGE_KEY, isPlaying ? 'playing' : 'paused');
+                statusNode.textContent = isPlaying ? 'Sedang memutar audio' : 'Audio dijeda';
+                if (channel) {
+                    channel.postMessage({
+                        type: 'audio-state',
+                        playing: isPlaying
+                    });
+                }
+            }
+
+            function play() {
+                if (!player || !playerReady) {
+                    pendingCommand = 'play';
+                    return;
+                }
+                player.playVideo();
+            }
+
+            function pause() {
+                if (!player || !playerReady) {
+                    pendingCommand = 'pause';
+                    return;
+                }
+                player.pauseVideo();
+            }
+
+            function handleCommand(command) {
+                if (command === 'play') {
+                    play();
+                } else if (command === 'pause') {
+                    pause();
+                } else if (command === 'state-request') {
+                    const state = localStorage.getItem(STORAGE_KEY) === 'playing';
+                    announceState(state);
+                }
+            }
+
+            if (channel) {
+                channel.onmessage = function (event) {
+                    const data = event.data || {};
+                    if (data.type !== 'audio-cmd') {
+                        return;
+                    }
+                    handleCommand(data.command);
+                };
+            }
+
+            window.onYouTubeIframeAPIReady = function () {
+                player = new window.YT.Player('yt-player', {
+                    height: '1',
+                    width: '1',
+                    videoId: VIDEO_ID,
+                    playerVars: {
+                        autoplay: 0,
+                        controls: 0,
+                        rel: 0,
+                        modestbranding: 1,
+                        loop: 1,
+                        playlist: VIDEO_ID,
+                        playsinline: 1,
+                        iv_load_policy: 3,
+                        fs: 0,
+                        disablekb: 1
+                    },
+                    events: {
+                        onReady: function () {
+                            playerReady = true;
+                            const saved = localStorage.getItem(STORAGE_KEY) || 'paused';
+                            if (pendingCommand === 'play' || saved === 'playing') {
+                                pendingCommand = null;
+                                play();
+                            } else if (pendingCommand === 'pause') {
+                                pendingCommand = null;
+                                pause();
+                            } else {
+                                announceState(false);
+                            }
+                        },
+                        onStateChange: function (event) {
+                            if (event.data === window.YT.PlayerState.PLAYING) {
+                                announceState(true);
+                            } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
+                                announceState(false);
+                            }
+                        }
+                    }
+                });
+            };
+
+            const script = document.createElement('script');
+            script.src = 'https://www.youtube.com/iframe_api';
+            script.async = true;
+            document.head.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

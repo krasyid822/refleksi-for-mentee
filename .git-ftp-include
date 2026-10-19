@@ -1,0 +1,6 @@
+# File untracked (diabaikan Git) yang HARUS tetap diunggah ke server FTP.
+# Baris diawali "!" = selalu unggah file ini.
+
+# .env berisi kredensial database & API key yang dibutuhkan server,
+# tapi diabaikan Git (.gitignore). Baris ini memaksa git-ftp mengunggahnya.
+!.env

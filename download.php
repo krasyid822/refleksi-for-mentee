@@ -1,5 +1,5 @@
 <?php
-include 'config.php';
+require_once 'env.php';
 
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     die("ID tidak valid.");
@@ -14,6 +14,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
+    $mode_form = (strpos($row['pencapaian'], 'Hasil check-in psikologi singkat:') === 0) ? 'Tes Psikologi Singkat' : 'Refleksi Mingguan';
 
     // ==================================================================
     // PERUBAHAN LOGIKA PRIVASI DI SINI
@@ -33,7 +34,9 @@ if ($result->num_rows > 0) {
 
     // 2. Siapkan nama file dengan mempertimbangkan privasi
     $filename_mentee_part = $row['nama_disamarkan'] ? "Mentee-Anonim" : $row['nama_mentee'];
-    $filename = "refleksi-" . preg_replace('/[^A-Za-z0-9\-]/', '-', $filename_mentee_part) . "-minggu-" . $row['periode_minggu'] . ".txt";
+    $filename_prefix = (strpos($row['pencapaian'], 'Hasil check-in psikologi singkat:') === 0) ? 'check-in-psikologi' : 'refleksi';
+    $filename_week_part = !empty($row['periode_minggu']) ? "-minggu-" . $row['periode_minggu'] : "-tanpa-minggu";
+    $filename = $filename_prefix . "-" . preg_replace('/[^A-Za-z0-9\-]/', '-', $filename_mentee_part) . $filename_week_part . ".txt";
 
     // ==================================================================
 
@@ -43,8 +46,9 @@ if ($result->num_rows > 0) {
     $content .= "==================================================\n\n";
     $content .= "Nama Mentee         : " . $nama_mentee_tampil . "\n";
     $content .= "Nama Mentor         : " . $nama_mentor_tampil . "\n";
-    $content .= "Periode             : Minggu ke-" . $row['periode_minggu'] . " (" . $row['periode_tanggal'] . ")\n";
+    $content .= "Periode             : " . (!empty($row['periode_minggu']) ? "Minggu ke-" . $row['periode_minggu'] . " (" . $row['periode_tanggal'] . ")" : $row['periode_tanggal']) . "\n";
     $content .= "Tanggal Submit      : " . date('d F Y, H:i', strtotime($row['tanggal_submit'])) . "\n\n";
+    $content .= "Model Form          : " . $mode_form . "\n\n";
     
     $content .= "--------------------------------------------------\n";
     $content .= "Kalimat Epik (AI)\n";

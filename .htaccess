@@ -1,0 +1,6 @@
+
+# BEGIN InfinityFree Managed Code
+# DO NOT EDIT - MANAGED BY THE MEMBERS AREA
+php_value date.timezone Asia/Jakarta
+ErrorDocument 404 https://krasyid822.github.io/page404.html
+# END InfinityFree Managed Code

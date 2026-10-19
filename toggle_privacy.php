@@ -1,5 +1,192 @@
 <?php
-include 'config.php';
+require_once 'env.php';
+
+function renderPrivacyPage($mode, $id, $errorMessage = '') {
+    $isDeactivate = ($mode === 'deactivate');
+    $title = $isDeactivate ? 'Nonaktifkan Mode Privasi' : 'Aktifkan Mode Privasi';
+    $icon = $isDeactivate ? '🔓' : '🔒';
+    $description = $isDeactivate
+        ? 'Masukkan sandi yang pernah kamu buat untuk menampilkan nama asli refleksi ini.'
+        : 'Buat sandi baru agar nama mentee dan mentor tetap tersembunyi di halaman publik.';
+    $label = $isDeactivate ? 'Masukkan Sandi:' : 'Buat Sandi Baru:';
+    $fieldName = $isDeactivate ? 'sandi_konfirmasi' : 'sandi_baru';
+    $buttonText = $isDeactivate ? '⚠️ Konfirmasi & Nonaktifkan' : '🔐 Aktifkan & Simpan Sandi';
+    $bodyClass = $isDeactivate ? 'danger-mode' : '';
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title><?php echo htmlspecialchars($title); ?></title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Space+Grotesk:wght@400;500&display=swap');
+
+            :root {
+                --ink: #0f172a;
+                --bg-main: #1d2f8a;
+                --card: #eff2ff;
+                --accent: #ffd166;
+                --danger: #f87171;
+                --outline: #0b1140;
+                --soft-shadow: #0b1445;
+            }
+
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+
+            body {
+                font-family: 'Space Grotesk', 'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+                background: var(--bg-main);
+                color: var(--ink);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 32px 16px;
+            }
+
+            body.danger-mode { background: #b91c1c; }
+
+            .form-card {
+                width: 100%;
+                max-width: 480px;
+                background: var(--card);
+                border: 3px solid var(--outline);
+                border-radius: 32px;
+                padding: 36px;
+                box-shadow: 18px 22px 0 var(--soft-shadow);
+            }
+
+            body.danger-mode .form-card {
+                background: #fee2e2;
+                box-shadow: 18px 22px 0 #7f1d1d;
+            }
+
+            .hero-icon {
+                font-size: 3rem;
+                text-align: center;
+                margin-bottom: 12px;
+            }
+
+            h2 {
+                font-family: 'Fredoka', sans-serif;
+                font-size: 1.8rem;
+                text-align: center;
+                color: var(--ink);
+            }
+
+            body.danger-mode h2 { color: #7f1d1d; }
+
+            p.description {
+                text-align: center;
+                color: rgba(15, 23, 42, 0.7);
+                margin: 10px 0 26px;
+                line-height: 1.5;
+            }
+
+            body.danger-mode p.description { color: #7f1d1d; }
+
+            label {
+                font-weight: 600;
+                display: block;
+                margin-bottom: 8px;
+                color: var(--ink);
+            }
+
+            body.danger-mode label { color: #7f1d1d; }
+
+            input[type="password"] {
+                width: 100%;
+                border: 2px solid var(--outline);
+                border-radius: 20px;
+                padding: 14px 16px;
+                font-size: 1rem;
+                font-family: inherit;
+                box-shadow: 6px 8px 0 #cbd4ff;
+            }
+
+            body.danger-mode input[type="password"] {
+                border-color: #7f1d1d;
+                box-shadow: 6px 8px 0 #fecaca;
+            }
+
+            button {
+                width: 100%;
+                margin-top: 20px;
+                border: 3px solid var(--outline);
+                border-radius: 999px;
+                padding: 14px 20px;
+                font-weight: 700;
+                font-size: 1rem;
+                cursor: pointer;
+                background: var(--accent);
+                color: var(--ink);
+                box-shadow: 12px 14px 0 var(--soft-shadow);
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+
+            button:hover { transform: translateY(-3px); box-shadow: 16px 18px 0 var(--soft-shadow); }
+
+            body.danger-mode button {
+                background: #fecaca;
+                border-color: #7f1d1d;
+                color: #7f1d1d;
+                box-shadow: 12px 14px 0 #7f1d1d;
+            }
+
+            .error-message {
+                background: #ffe4e6;
+                color: #7f1d1d;
+                border: 3px solid var(--outline);
+                border-radius: 18px;
+                padding: 12px 16px;
+                font-weight: 600;
+                margin-top: 16px;
+                text-align: center;
+                box-shadow: 8px 10px 0 var(--soft-shadow);
+            }
+
+            body.danger-mode .error-message {
+                border-color: #7f1d1d;
+                box-shadow: 8px 10px 0 #7f1d1d;
+            }
+
+            .back-link {
+                display: block;
+                margin-top: 20px;
+                text-align: center;
+                font-weight: 600;
+                color: var(--ink);
+                text-decoration: none;
+            }
+
+            body.danger-mode .back-link { color: #7f1d1d; }
+
+            @media (max-width: 560px) {
+                .form-card { padding: 28px 22px; border-radius: 24px; }
+            }
+        </style>
+    </head>
+    <body class="<?php echo $bodyClass; ?>">
+        <div class="form-card">
+            <div class="hero-icon"><?php echo $icon; ?></div>
+            <h2><?php echo htmlspecialchars($title); ?></h2>
+            <p class="description"><?php echo htmlspecialchars($description); ?></p>
+            <form action="toggle_privacy.php?id=<?php echo $id; ?>" method="post">
+                <label for="field_input"><?php echo htmlspecialchars($label); ?></label>
+                <input type="password" id="field_input" name="<?php echo $fieldName; ?>" placeholder="********" required>
+                <?php if (!empty($errorMessage)): ?>
+                    <div class="error-message">❌ <?php echo htmlspecialchars($errorMessage); ?></div>
+                <?php endif; ?>
+                <button type="submit"><?php echo htmlspecialchars($buttonText); ?></button>
+            </form>
+            <a href="detail.php?id=<?php echo $id; ?>" class="back-link">Batal</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
 
 // Validasi ID dari URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -47,22 +234,7 @@ if ($status_sekarang == 0) {
         }
     } else {
         // Jika belum, tampilkan form untuk MEMBUAT sandi baru
-        ?>
-        <!DOCTYPE html>
-        <html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Buat Sandi Privasi</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background-color:#f0f2f5;margin:0}.form-container{background:white;padding:30px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.1);width:90%;max-width:400px}h2{color:#0056b3;text-align:center}p{text-align:center;color:#555}label{font-weight:700;display:block;margin-top:20px;margin-bottom:5px}input[type=password]{width:100%;padding:10px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}button{width:100%;padding:12px;margin-top:20px;border:none;border-radius:5px;background-color:#28a745;color:#fff;font-size:16px;cursor:pointer}button:hover{background-color:#218838}a{display:block;text-align:center;margin-top:15px;color:#6c757d;text-decoration:none}</style></head>
-        <body>
-            <div class="form-container">
-                <h2>Aktifkan Mode Privasi</h2><p>Untuk mengamankan nama, Anda harus membuat sebuah sandi.</p>
-                <form action="toggle_privacy.php?id=<?php echo $id; ?>" method="post">
-                    <label for="sandi_baru">Buat Sandi Baru:</label>
-                    <input type="password" id="sandi_baru" name="sandi_baru" required>
-                    <button type="submit">Aktifkan & Simpan Sandi</button>
-                </form>
-                <a href="detail.php?id=<?php echo $id; ?>">Batal</a>
-            </div>
-        </body></html>
-        <?php
-        exit();
+        renderPrivacyPage('activate', $id);
     }
 }
 
@@ -79,14 +251,11 @@ else if ($status_sekarang == 1) {
         if ($sandi_konfirmasi === $row['sandi_nama']) {
             $conn->begin_transaction();
             try {
-                // DIPERBAIKI: Query sekarang tidak menggunakan parameter, jadi lebih aman
                 $sqlUpdate = "UPDATE refleksi_mingguan SET nama_disamarkan = 0, sandi_nama = NULL WHERE id = ?";
                 $stmtUpdate = $conn->prepare($sqlUpdate);
-                // DIPERBAIKI: Menambahkan bind_param yang hilang untuk ID
                 $stmtUpdate->bind_param("i", $id);
                 $stmtUpdate->execute();
                 $stmtUpdate->close();
-                // DIPERBAIKI: Menambahkan commit untuk menyimpan perubahan
                 $conn->commit();
                 header("Location: detail.php?id=" . $id . "&status=privacy_off");
                 exit();
@@ -98,26 +267,7 @@ else if ($status_sekarang == 1) {
             $error_konfirmasi = "Sandi konfirmasi salah. Silakan coba lagi.";
         }
     }
-    // Jika belum submit, atau jika sandi salah, tampilkan form untuk KONFIRMASI sandi lama
-    ?>
-    <!DOCTYPE html>
-    <html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Konfirmasi Penonaktifan Privasi</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background-color:#f0f2f5;margin:0}.form-container{background:white;padding:30px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.1);width:90%;max-width:400px}h2{color:#c82333;text-align:center}p{text-align:center;color:#555}label{font-weight:700;display:block;margin-top:20px;margin-bottom:5px}input[type=password]{width:100%;padding:10px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}button{width:100%;padding:12px;margin-top:20px;border:none;border-radius:5px;background-color:#c82333;color:#fff;font-size:16px;cursor:pointer}button:hover{background-color:#bd2130}a{display:block;text-align:center;margin-top:15px;color:#6c757d;text-decoration:none}.error-message{color:red;text-align:center;font-weight:700;margin-top:10px}</style></head>
-    <body>
-        <div class="form-container">
-            <h2>Nonaktifkan Mode Privasi</h2><p>Untuk melanjutkan, masukkan sandi yang ada sebagai konfirmasi.</p>
-            <form action="toggle_privacy.php?id=<?php echo $id; ?>" method="post">
-                <label for="sandi_konfirmasi">Masukkan Sandi Saat Ini:</label>
-                <input type="password" id="sandi_konfirmasi" name="sandi_konfirmasi" required>
-                <?php if(!empty($error_konfirmasi)): ?>
-                    <p class="error-message"><?php echo $error_konfirmasi; ?></p>
-                <?php endif; ?>
-                <button type="submit">Konfirmasi & Nonaktifkan</button>
-            </form>
-            <a href="detail.php?id=<?php echo $id; ?>">Batal</a>
-        </div>
-    </body></html>
-    <?php
-    exit();
+    renderPrivacyPage('deactivate', $id, $error_konfirmasi);
 }
 
 $conn->close();

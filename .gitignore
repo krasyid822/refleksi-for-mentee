@@ -1,0 +1,14 @@
+# Konfigurasi rahasia
+.env
+
+# Konfigurasi tooling lokal (OpenCode MCP, path lokal)
+opencode.json
+
+# File sistem
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+.idea/
+.vscode/
