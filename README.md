@@ -118,4 +118,4 @@ Secara default file berikut **tidak** ditarik: `.git-ftp.log` dan `.env`
 https://g.co/gemini/share/0a9d1d95003c
 
 ## Catatan
-aktifakn pwa.
+aktifakn pwa. buat sistem increment build yang otomatis terpicu saat jalankan push.sh.
