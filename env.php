@@ -9,10 +9,12 @@
 if (!function_exists('loadEnv')) {
     /**
      * Membaca file .env dan menyuntikkan nilainya ke environment.
-     * Variabel environment yang sudah ada TIDAK ditimpa, sehingga
-     * pengaturan dari server (Apache/Nginx) tetap diprioritaskan.
+     *
+     * @param string $path     Lokasi file.
+     * @param bool   $override Jika true, nilai dari file ini menimpa nilai
+     *                         yang sudah ada (dipakai untuk .env.local).
      */
-    function loadEnv($path)
+    function loadEnv($path, $override = false)
     {
         if (!is_file($path) || !is_readable($path)) {
             return;
@@ -58,8 +60,9 @@ if (!function_exists('loadEnv')) {
                 }
             }
 
-            // Jangan timpa environment yang sudah diset sebelumnya
-            if (getenv($key) !== false || isset($_ENV[$key]) || isset($_SERVER[$key])) {
+            // Jangan timpa environment yang sudah diset sebelumnya,
+            // kecuali memang diminta (untuk .env.local).
+            if (!$override && (getenv($key) !== false || isset($_ENV[$key]) || isset($_SERVER[$key]))) {
                 continue;
             }
 
@@ -105,7 +108,11 @@ if (!function_exists('env')) {
 if (!defined('APP_BOOTSTRAPPED')) {
     define('APP_BOOTSTRAPPED', true);
 
+    // .env = konfigurasi utama (juga dipakai di server).
+    // .env.local = override khusus mesin lokal (diabaikan Git & FTP).
+    // Keduanya opsional; .env.local menimpa .env bila ada.
     loadEnv(__DIR__ . '/.env');
+    loadEnv(__DIR__ . '/.env.local', true);
 
     // --- Pengaturan Database ---
     define('DB_SERVER', env('DB_SERVER', 'localhost'));

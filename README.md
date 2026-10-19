@@ -20,12 +20,37 @@ Lalu isi nilai berikut di `.env`:
 | `DB_NAME`        | Nama database                                           |
 | `GEMINI_API_KEY` | API key Gemini dari https://aistudio.google.com         |
 | `GEMINI_MODEL`   | Model Gemini, default `gemini-1.5-flash-latest`         |
+| `OPENROUTER_API_KEY` | API key OpenRouter untuk fitur tes psikologi        |
 | `FTP_URL`        | URL FTP tujuan deploy                                   |
 | `FTP_USER`       | Username FTP                                            |
 | `FTP_PASSWORD`   | Password FTP                                            |
 | `FTP_SYNCROOT`   | Sub-folder tujuan FTP (opsional)                        |
 
 Jika variabel environment sudah diatur di server (Apache/Nginx), nilai tersebut akan diprioritaskan dibanding isi `.env`.
+
+### Database lokal (`.env.local`)
+
+Database InfinityFree hanya bisa diakses dari hostingnya, sehingga di komputer sendiri gunakan database lokal. Buat file `.env.local` (tidak di-commit & tidak diunggah ke FTP):
+
+```bash
+cp .env.local.example .env.local
+```
+
+Isi kredensial database lokal:
+
+```ini
+DB_SERVER=127.0.0.1
+DB_USERNAME=root
+DB_PASSWORD=
+DB_NAME=refleksi_local
+```
+
+Nilai di `.env.local` **menimpa** `.env`. Di server, `.env.local` tidak ada sehingga yang dipakai tetap `.env`. Siapkan database lokalnya:
+
+```bash
+mysql -u root -p -e "CREATE DATABASE refleksi_local CHARACTER SET utf8mb4;"
+mysql -u root -p refleksi_local < FORMAT_DATABASE.sql
+```
 
 ## Menjalankan secara lokal
 
