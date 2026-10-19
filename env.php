@@ -59,7 +59,7 @@ if (!function_exists('loadEnv')) {
             }
 
             // Jangan timpa environment yang sudah diset sebelumnya
-            if (getenv($key) !== false) {
+            if (getenv($key) !== false || isset($_ENV[$key]) || isset($_SERVER[$key])) {
                 continue;
             }
 
@@ -74,14 +74,28 @@ if (!function_exists('env')) {
     /**
      * Ambil nilai environment, dengan nilai default opsional.
      * String kosong dianggap belum diset.
+     *
+     * Catatan: sebagian hosting (mis. InfinityFree) menonaktifkan putenv()
+     * sehingga getenv() tidak melihat nilai dari .env. Karena itu kita
+     * membaca $_ENV / $_SERVER sebagai fallback.
      */
     function env($key, $default = null)
     {
+        // 1) Environment asli dari server
         $value = getenv($key);
-        if ($value === false || $value === '') {
-            return $default;
+        if ($value !== false && $value !== '') {
+            return $value;
         }
-        return $value;
+
+        // 2) Nilai yang disuntikkan loadEnv() ke $_ENV / $_SERVER
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return $_ENV[$key];
+        }
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return $_SERVER[$key];
+        }
+
+        return $default;
     }
 }
 
