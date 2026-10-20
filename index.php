@@ -2,7 +2,6 @@
 require_once 'env.php';
 
 date_default_timezone_set("Asia/Jakarta");
-$waktu_sekarang = date("Y-m-d H:i:s");
 $zona_waktu = date_default_timezone_get();
 
 $search_query = trim($_GET['q'] ?? '');
@@ -91,10 +90,95 @@ if ($search_query !== '') {
             margin-bottom: 8px;
         }
 
-        .meta-card .value {
-            font-size: 1.15rem;
+        .clock {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            padding-top: 4px;
+        }
+
+        .clock-face {
+            position: relative;
+            flex: 0 0 auto;
+            width: 132px;
+            height: 132px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.10), transparent 62%),
+                rgba(9, 15, 40, 0.92);
+            border: 2px solid rgba(255, 255, 255, 0.24);
+            box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.5), 0 10px 24px rgba(0, 0, 0, 0.28);
+        }
+
+        .clock-face::before {
+            content: "";
+            position: absolute;
+            inset: 7px;
+            border-radius: 50%;
+            background: repeating-conic-gradient(from -0.5deg, rgba(255, 255, 255, 0.55) 0 1.2deg, transparent 1.2deg 30deg);
+            -webkit-mask: radial-gradient(circle, transparent 0 79%, #000 80%);
+            mask: radial-gradient(circle, transparent 0 79%, #000 80%);
+        }
+
+        .clock-hand {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform-origin: 50% 100%;
+            border-radius: 999px;
+        }
+
+        .clock-hand.hour {
+            width: 6px;
+            height: 34px;
+            margin-left: -3px;
+            background: #ffd166;
+        }
+
+        .clock-hand.minute {
+            width: 4px;
+            height: 48px;
+            margin-left: -2px;
+            background: #f4f6fb;
+        }
+
+        .clock-hand.second {
+            width: 2px;
+            height: 56px;
+            margin-left: -1px;
+            background: #ff6b6b;
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 11px;
+            height: 11px;
+            margin: -5.5px 0 0 -5.5px;
+            border-radius: 50%;
+            background: #ffd166;
+            box-shadow: 0 0 0 3px rgba(9, 15, 40, 0.95);
+        }
+
+        .clock-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .clock-digital {
+            font-size: 1.35rem;
             font-weight: 700;
+            letter-spacing: 0.06em;
+            font-variant-numeric: tabular-nums;
             color: #ffffff;
+        }
+
+        .clock-zone {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .search-form {
@@ -308,8 +392,18 @@ if ($search_query !== '') {
     <div class="meta-row">
         <div class="meta-card">
             <span class="label">Waktu Sekarang</span>
-            <div class="value"><?php echo htmlspecialchars($waktu_sekarang); ?></div>
-            <div style="margin-top:8px; color: rgba(255,255,255,0.7);">Zona waktu: <?php echo htmlspecialchars($zona_waktu); ?></div>
+            <div class="clock">
+                <div class="clock-face" role="img" aria-label="Jam analog waktu sekarang, zona waktu <?php echo htmlspecialchars($zona_waktu); ?>">
+                    <div class="clock-hand hour" id="jam-jam"></div>
+                    <div class="clock-hand minute" id="jam-menit"></div>
+                    <div class="clock-hand second" id="jam-detik"></div>
+                    <div class="clock-center"></div>
+                </div>
+                <div class="clock-info">
+                    <div class="clock-digital" id="jam-digital">--:--:--</div>
+                    <div class="clock-zone">Zona waktu: <?php echo htmlspecialchars($zona_waktu); ?></div>
+                </div>
+            </div>
         </div>
         <div class="search-card">
             <span class="label">Pencarian</span>
@@ -357,5 +451,49 @@ if ($search_query !== '') {
             </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        (function () {
+            var hourHand = document.getElementById('jam-jam');
+            var minuteHand = document.getElementById('jam-menit');
+            var secondHand = document.getElementById('jam-detik');
+            var digital = document.getElementById('jam-digital');
+            if (!hourHand || !minuteHand || !secondHand) return;
+
+            var timeFormat = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            function pad(value) {
+                return String(value).padStart(2, '0');
+            }
+
+            function tick() {
+                var parts = timeFormat.formatToParts(new Date());
+                var hour = 0, minute = 0, second = 0;
+
+                parts.forEach(function (part) {
+                    if (part.type === 'hour') hour = parseInt(part.value, 10) % 24;
+                    if (part.type === 'minute') minute = parseInt(part.value, 10);
+                    if (part.type === 'second') second = parseInt(part.value, 10);
+                });
+
+                secondHand.style.transform = 'rotate(' + (second * 6) + 'deg)';
+                minuteHand.style.transform = 'rotate(' + ((minute + second / 60) * 6) + 'deg)';
+                hourHand.style.transform = 'rotate(' + (((hour % 12) + minute / 60) * 30) + 'deg)';
+
+                if (digital) {
+                    digital.textContent = pad(hour) + ':' + pad(minute) + ':' + pad(second);
+                }
+            }
+
+            tick();
+            setInterval(tick, 1000);
+        })();
+    </script>
 </body>
 </html>
