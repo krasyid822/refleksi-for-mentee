@@ -17,3 +17,6 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# Catatan / referensi lokal
+.contekan/

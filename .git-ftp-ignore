@@ -19,6 +19,9 @@ FORMAT_DATABASE.sql
 .env.local
 .env.local.example
 
+# Catatan / referensi lokal
+.contekan/
+
 # Dump / backup database & arsip
 *.sql.zip
 *.sql.gz

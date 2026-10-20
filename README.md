@@ -123,5 +123,8 @@ Secara default file berikut **tidak** ditarik: `.git-ftp.log` dan `.env`
 https://g.co/gemini/share/0a9d1d95003c
 
 ## Catatan
-aktifakn pwa. buat sistem increment build yang otomatis terpicu saat jalankan push.sh.
+aktifakn pwa. buat sistem increment build yang otomatis terpicu saat jalankan push.sh yang juga mereset cache pwa.
 buat script let-encrypt.sh untuk mengenkripsi semua key rahasia dan kuncinya di patch ke env.php.
+tiru algoritma pengaplikasian koneksi ke ai openrouter seperti .contekan/_admin.php agar ai handal.
+beri user trigger jika mekanisme putar audio otomatis bermasalah karena kebijakan browser.
+di overlay player audio sisipkan div.clock.
