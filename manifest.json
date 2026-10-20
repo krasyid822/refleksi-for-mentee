@@ -1,11 +1,17 @@
 {
+  "id": "./",
   "name": "Refleksi Mentee Mingguan",
   "short_name": "Refleksi Mingguan",
-  "start_url": ".",
+  "start_url": "./index.php",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#1d2f8a",
   "theme_color": "#1d2f8a",
-  "description": "Dashboard refleksi mentee dengan formulir klasik dan interaktif.",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle"],
+  "description": "Dashboard refleksi mentee dengan formulir klasik, interaktif, psikologi, dan form bebas berbantuan AI.",
   "icons": [
     {
       "src": "icons/icon-192.svg",
@@ -18,6 +24,20 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Form Bebas",
+      "short_name": "Form Bebas",
+      "url": "./form_bebas.php",
+      "icons": [{ "src": "icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Tes Psikologi",
+      "short_name": "Psikologi",
+      "url": "./form_psikologi.php",
+      "icons": [{ "src": "icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]
 }

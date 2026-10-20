@@ -4,3 +4,24 @@
 php_value date.timezone Asia/Jakarta
 ErrorDocument 404 https://krasyid822.github.io/page404.html
 # END InfinityFree Managed Code
+
+# ------------------------------------------------------------------
+# Perlindungan konfigurasi & cache
+# ------------------------------------------------------------------
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Jangan pernah menyajikan file konfigurasi/rahasia sebagai teks biasa.
+<FilesMatch "^(\.env(\..*)?|env\.php|.*\.enc|.*\.log|.*\.sql|.*\.dump|.*\.sql\.gz|.*\.sql\.zip|.*\.zip)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule (^|/)\.git(/|$) - [F,L]
+    RewriteRule ^cache(/|$) - [F,L]
+</IfModule>

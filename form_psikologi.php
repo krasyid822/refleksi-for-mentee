@@ -33,12 +33,6 @@ $reaksi_options = ['Berdiam dulu', 'Cerita ke orang terdekat', 'Menyusun daftar 
 $kebutuhan_options = ['Istirahat', 'Dukungan', 'Kejelasan', 'Motivasi', 'Ruang sendiri'];
 $bantuan_options = ['Didengarkan dulu', 'Feedback lembut', 'Bantu susun prioritas', 'Dorongan positif', 'Doa dan dukungan'];
 
-$input_values['model_ai'] = '';
-
-if (defined('OPENROUTER_API_KEY') && !empty(OPENROUTER_API_KEY)) {
-    $input_values['model_ai'] = '';
-}
-
 $riwayat_sql = "SELECT id, nama_mentee, nama_disamarkan, periode_minggu, periode_tanggal, tanggal_submit FROM refleksi_mingguan ORDER BY tanggal_submit DESC";
 $riwayat_result = $conn->query($riwayat_sql);
 
@@ -553,7 +547,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
     <script>
         window.SUBMIT_SUCCESS = <?php echo $redirect_after_success ? 'true' : 'false'; ?>;
-        window.APP_OPENROUTER_API_KEY = <?php echo json_encode(defined('OPENROUTER_API_KEY') ? OPENROUTER_API_KEY : ''); ?>;
     </script>
 </head>
 <body>
@@ -563,6 +556,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="form.php" class="nav-link">📝 Form Klasik</a>
         <a href="form_interactive.php" class="nav-link">✨ Form Interaktif</a>
         <a href="form_psikologi.php" class="nav-link active">🧠 Tes Psikologi</a>
+        <a href="form_bebas.php" class="nav-link">🪶 Form Bebas</a>
         <a href="#tabel-riwayat" class="nav-link">🔎 Detail</a>
     </div>
 
@@ -808,16 +802,14 @@ async function loadFreeModels() {
     const defaultChoice = selectedValue || '';
 
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/models', {
-            headers: {
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'Refleksi Mentee'
-            }
+        // Daftar model diambil lewat proxy server; API key tidak pernah
+        // dikirim ke browser.
+        const response = await fetch('ai_proxy.php?action=models', {
+            headers: { 'Accept': 'application/json' }
         });
-
         const data = await response.json();
-        const freeModels = Array.isArray(data?.data)
-            ? data.data.filter((item) => typeof item?.id === 'string' && item.id.endsWith(':free'))
+        const freeModels = Array.isArray(data?.models)
+            ? data.models.filter((item) => typeof item?.id === 'string' && item.id.endsWith(':free'))
             : [];
 
         const modelsToShow = freeModels.length > 0 ? freeModels : freeModelFallback.map((id) => ({ id }));
@@ -838,7 +830,7 @@ async function loadFreeModels() {
         }
     } catch (error) {
         modelSelect.innerHTML = '<option value="">Gagal memuat model gratis</option>';
-        aiStatus.textContent = 'Gagal memuat daftar model OpenRouter: ' + (error?.message || String(error));
+        aiStatus.textContent = 'Gagal memuat daftar model: ' + (error?.message || String(error));
         apiStatusError();
     }
 }
@@ -850,53 +842,39 @@ modelSelect.addEventListener('change', function () {
 });
 
 btnGenerateAi.addEventListener('click', async function () {
-    const apiKey = (window.APP_OPENROUTER_API_KEY || '').trim();
     const model = modelSelect.value;
 
-    if (!apiKey) {
-        aiStatus.textContent = 'API key OpenRouter belum terpasang di file .env.';
-        apiStatusError();
-        return;
-    }
-
     if (!model || !model.endsWith(':free')) {
-        aiStatus.textContent = 'Pilih model gratis dari daftar OpenRouter terlebih dahulu.';
+        aiStatus.textContent = 'Pilih model gratis dari daftar terlebih dahulu.';
         apiStatusError();
         return;
     }
 
     btnGenerateAi.disabled = true;
-    aiStatus.textContent = 'Sedang menghubungi OpenRouter...';
+    aiStatus.textContent = 'Sedang menghubungi AI...';
     apiStatusInfo();
 
     try {
         const prompt = buildPromptFromForm();
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        // Semua panggilan AI lewat server. Browser tidak memegang API key.
+        const response = await fetch('ai_proxy.php?action=epic', {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + apiKey,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'Refleksi Mentee'
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                model: model,
-                messages: [
-                    { role: 'system', content: 'Kamu menulis satu kalimat epik yang singkat, hangat, dan reflektif dalam Bahasa Indonesia.' },
-                    { role: 'user', content: prompt }
-                ]
-            })
+            body: JSON.stringify({ model: model, prompt: prompt })
         });
 
         const result = await response.json();
-        const text = (result?.choices?.[0]?.message?.content || '').trim();
-        if (!text) {
-            throw new Error(result?.error?.message || 'Respons kosong dari OpenRouter.');
+        const text = (result?.text || '').trim();
+        if (!response.ok || !result?.ok || !text) {
+            throw new Error(result?.error || 'Respons kosong dari server AI.');
         }
 
         epicHidden.value = text;
-        aiStatus.textContent = 'Kalimat epik berhasil digenerate dengan model ' + model + '.';
+        aiStatus.textContent = 'Kalimat epik berhasil digenerate dengan model ' + (result.model || model) + '.';
         apiStatusSuccess();
 
         try {

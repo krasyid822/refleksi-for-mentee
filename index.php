@@ -99,6 +99,8 @@ if ($search_query !== '') {
             --btn-2-fg: #0f172a;
             --btn-3-bg: #b7f0ff;
             --btn-3-fg: #0f172a;
+            --btn-4-bg: #bbf7d0;
+            --btn-4-fg: #0f172a;
 
             --card-bg: #d9e3ff;
             --card-text: #0f172a;
@@ -167,6 +169,8 @@ if ($search_query !== '') {
             --btn-2-fg: #e6ebff;
             --btn-3-bg: #123047;
             --btn-3-fg: #d7f6ff;
+            --btn-4-bg: #133a2a;
+            --btn-4-fg: #bbf7d0;
 
             --card-bg: #0f1630;
             --card-text: #e6ebff;
@@ -530,6 +534,11 @@ if ($search_query !== '') {
             color: var(--btn-3-fg);
         }
 
+        .btn-submit.btn-quaternary {
+            background: var(--btn-4-bg);
+            color: var(--btn-4-fg);
+        }
+
         .hero-actions {
             display: flex;
             gap: 12px;
@@ -754,7 +763,7 @@ if ($search_query !== '') {
                 font-size: 0.92rem;
                 line-height: 1.2;
             }
-            .hero-actions .btn-submit:last-child {
+            .hero-actions .btn-submit:last-child:nth-child(odd) {
                 width: 100%;
             }
             .card-container { grid-template-columns: 1fr; }
@@ -817,6 +826,7 @@ if ($search_query !== '') {
             <a href="form_interactive.php" class="btn-submit">✍️ Form Interaktif</a>
             <a href="form.php" class="btn-submit btn-secondary">📝 Form Klasik</a>
             <a href="form_psikologi.php" class="btn-submit btn-tertiary">🧠 Tes Psikologi Singkat</a>
+            <a href="form_bebas.php" class="btn-submit btn-quaternary">🪶 Form Bebas</a>
         </div>
     </div>
 

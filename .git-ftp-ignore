@@ -11,6 +11,8 @@ README.md
 run.sh
 push.sh
 pull.sh
+build.sh
+let-encrypt.sh
 opencode.json
 LICENSE
 sourcecode.md
@@ -18,6 +20,11 @@ FORMAT_DATABASE.sql
 .env.example
 .env.local
 .env.local.example
+.env
+
+# Cache runtime & data yang dibuat server sendiri
+cache/
+kata-kata.json
 
 # Catatan / referensi lokal
 .contekan/

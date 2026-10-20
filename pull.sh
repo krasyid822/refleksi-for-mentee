@@ -8,7 +8,7 @@
 # Pemakaian:
 #   ./pull.sh              # unduh file terbaru dari server ke folder proyek
 #   ./pull.sh --dry-run    # tampilkan apa yang akan diunduh (tanpa mengunduh)
-#   ./pull.sh --with-env   # sertakan .env (default: .env dilewati)
+#   ./pull.sh --with-env   # sertakan .env & .env.enc (default: dilewati)
 #   ./pull.sh --help       # bantuan
 #
 set -euo pipefail
@@ -45,7 +45,7 @@ ${BOLD}Opsi:${RESET}
   --into DIR     Unduh ke folder DIR (default: folder proyek). Berguna untuk
                  meninjau sebelum menimpa file lokal.
   --dry-run      Tampilkan rencana unduhan tanpa mengunduh
-  --with-env     Ikut mengunduh .env (default: .env dilewati)
+  --with-env     Ikut mengunduh .env dan .env.enc (default: keduanya dilewati)
   --quiet        Kurangi keluaran lftp
   -h, --help     Tampilkan bantuan ini
 
@@ -137,7 +137,7 @@ mkdir -p "$LOCAL_DIR"
 # ------------------------------------------------------------------
 EXCLUDES=( ".git-ftp.log" )
 if [ "$WITH_ENV" -eq 0 ]; then
-  EXCLUDES+=( ".env" )   # jangan timpa konfigurasi lokal
+  EXCLUDES+=( ".env" ".env.enc" )   # jangan timpa konfigurasi lokal
 fi
 
 MIRROR_OPTS=( --no-perms --no-symlinks )
@@ -159,7 +159,7 @@ info "Sumber : ${FTP_URL}"
 info "Tujuan : ${LOCAL_DIR}"
 info "Mode   : $([ "$DRY_RUN" -eq 1 ] && echo 'dry-run (tanpa perubahan)' || echo 'unduh file terbaru')"
 info "Lewati : ${EXCLUDES[*]}"
-[ "$WITH_ENV" -eq 1 ] && warn ".env akan ikut diunduh dan dapat menimpa .env lokal."
+[ "$WITH_ENV" -eq 1 ] && warn ".env dan .env.enc akan ikut diunduh dan dapat menimpa file lokal."
 
 if lftp -u "$FTP_USER","$FTP_PASSWORD" "$FTP_URL" -e "$LFTP_CMD"; then
   echo

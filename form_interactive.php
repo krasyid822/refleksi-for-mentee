@@ -488,6 +488,7 @@ $result = $conn->query($riwayat_sql);
         <a href="form.php" class="nav-link">📝 Form Klasik</a>
         <a href="form_interactive.php" class="nav-link active">✨ Form Interaktif</a>
         <a href="form_psikologi.php" class="nav-link">🧠 Tes Psikologi</a>
+        <a href="form_bebas.php" class="nav-link">🪶 Form Bebas</a>
         <a href="#tabel-riwayat" class="nav-link">🔎 Detail</a>
     </div>
 

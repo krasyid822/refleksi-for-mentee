@@ -1,6 +1,11 @@
 # Konfigurasi rahasia
 .env
 .env.local
+.env.enc
+.env.key
+
+# Cache runtime (model AI, skema, rate limit, antrean issue)
+cache/
 
 # Dump / backup database & arsip (jangan masuk repo)
 *.sql.zip

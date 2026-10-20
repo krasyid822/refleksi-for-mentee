@@ -28,7 +28,7 @@ FTP_INCLUDE_FILE=".git-ftp-include"
 # File yang TIDAK BOLEH dikirim ke GitHub (selain aturan .gitignore).
 # Pola memakai glob bash.
 # ------------------------------------------------------------------
-GITHUB_DENY=(".env" "*.pem" "*.key" "*.ppk" "id_rsa*" "*.p12" "*.keystore")
+GITHUB_DENY=(".env" ".env.enc" "*.enc" "*.pem" "*.key" "*.ppk" "id_rsa*" "*.p12" "*.keystore")
 
 # ------------------------------------------------------------------
 # Warna & helper output
@@ -128,6 +128,43 @@ check_github_safety() {
     error "Keluarkan dari Git dengan: git rm --cached <file>"
     return 1
   fi
+  return 0
+}
+
+# ------------------------------------------------------------------
+# Persiapan build PWA & enkripsi konfigurasi
+# ------------------------------------------------------------------
+prepare_release() {
+  [ "$DO_COMMIT" -eq 1 ] || {
+    warn "Melewati build & enkripsi karena --no-commit."
+    return 0
+  }
+
+  if [ -x "${APP_DIR}/build.sh" ]; then
+    info "Menaikkan nomor build & mereset cache PWA..."
+    if ! (cd "$APP_DIR" && ./build.sh); then
+      error "build.sh gagal."
+      return 1
+    fi
+  else
+    warn "build.sh tidak ditemukan atau tidak executable."
+  fi
+
+  # Enkripsi hanya diperlukan untuk deploy server. Untuk GitHub saja,
+  # env.php tidak perlu diubah.
+  if [ "$ACTION" != "github" ]; then
+    if [ -x "${APP_DIR}/let-encrypt.sh" ] && [ -f "$ENV_FILE" ]; then
+      info "Menyiapkan .env.enc untuk server..."
+      if ! (cd "$APP_DIR" && ./let-encrypt.sh); then
+        error "let-encrypt.sh gagal."
+        return 1
+      fi
+    elif [ ! -f "${APP_DIR}/.env.enc" ]; then
+      warn "let-encrypt.sh/.env tidak tersedia dan .env.enc belum ada."
+      warn "Server mungkin tidak bisa membaca konfigurasi."
+    fi
+  fi
+
   return 0
 }
 
@@ -254,7 +291,8 @@ if ! git -C "$APP_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 # Jalankan sesuai tujuan
-# Pemeriksaan keamanan & commit dilakukan sekali di sini, lalu push ke tujuan.
+# Build, pemeriksaan keamanan & commit dilakukan sekali di sini.
+prepare_release || exit 1
 check_github_safety
 commit_changes
 
