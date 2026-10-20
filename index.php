@@ -27,6 +27,19 @@ if ($search_query !== '') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Refleksi Mingguan - Dashboard</title>
     <meta name="theme-color" content="#1d2f8a">
+    <script>
+        // Terapkan tema sebelum CSS dirender agar tidak ada kedipan.
+        (function () {
+            var theme = 'light';
+            try {
+                var saved = localStorage.getItem('refleksi-theme');
+                if (saved === 'dark' || saved === 'light') theme = saved;
+            } catch (e) {}
+            document.documentElement.dataset.theme = theme;
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', theme === 'dark' ? '#05070f' : '#1d2f8a');
+        })();
+    </script>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
@@ -34,14 +47,173 @@ if ($search_query !== '') {
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Space+Grotesk:wght@400;500&display=swap');
 
+        /* ============================================================
+           Variabel tema: terang (default) & gelap
+           ============================================================ */
+        :root {
+            color-scheme: light;
+
+            --bg: #1d2f8a;
+            --glow-1: transparent;
+            --glow-2: transparent;
+            --glow-3: transparent;
+
+            --text: #f4f6fb;
+            --text-strong: #ffffff;
+            --muted: rgba(255, 255, 255, 0.7);
+            --muted-strong: rgba(255, 255, 255, 0.86);
+            --label: rgba(255, 255, 255, 0.58);
+            --heading: #ffd166;
+
+            --panel: rgba(9, 15, 40, 0.72);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --panel-shadow: rgba(0, 0, 0, 0.24);
+            --divider: rgba(255, 255, 255, 0.12);
+
+            --accent: #ffd166;
+            --accent-text: #142044;
+            --danger: #ff6b6b;
+
+            --clock-face: rgba(9, 15, 40, 0.92);
+            --clock-border: rgba(255, 255, 255, 0.24);
+            --clock-shadow: rgba(0, 0, 0, 0.5);
+            --tick: rgba(255, 255, 255, 0.55);
+            --hand-minute: #f4f6fb;
+
+            --input-bg: rgba(255, 255, 255, 0.06);
+            --input-border: rgba(255, 255, 255, 0.16);
+            --input-text: #ffffff;
+            --placeholder: rgba(255, 255, 255, 0.55);
+
+            --chip-bg: rgba(255, 255, 255, 0.08);
+            --ok-bg: rgba(74, 222, 128, 0.16);
+            --ok-fg: #86efac;
+            --warn-bg: rgba(251, 191, 36, 0.16);
+            --warn-fg: #fcd34d;
+            --bad-bg: rgba(248, 113, 113, 0.18);
+            --bad-fg: #fca5a5;
+
+            --btn-shadow: #0f172a;
+            --btn-border: #0f172a;
+            --btn-2-bg: #d9e3ff;
+            --btn-2-fg: #0f172a;
+            --btn-3-bg: #b7f0ff;
+            --btn-3-fg: #0f172a;
+
+            --card-bg: #d9e3ff;
+            --card-text: #0f172a;
+            --card-border: #0f172a;
+            --card-shadow: #0b1140;
+            --card-glow: transparent;
+            --card-author: #1f285b;
+            --link: #0f62fe;
+            --link-border: rgba(15, 98, 254, 0.4);
+
+            --nodata-bg: #b7f0ff;
+            --toast-bg: #bbf7d0;
+            --toast-fg: #0f172a;
+
+            --theme-icon: #142044;
+            --theme-btn-bg: rgba(255, 255, 255, 0.9);
+            --theme-btn-border: rgba(15, 23, 42, 0.16);
+        }
+
+        html[data-theme="dark"] {
+            color-scheme: dark;
+
+            --bg: #05070f;
+            --glow-1: rgba(56, 89, 255, 0.22);
+            --glow-2: rgba(125, 211, 252, 0.10);
+            --glow-3: rgba(124, 58, 237, 0.18);
+
+            --text: #e6ebff;
+            --text-strong: #f7f9ff;
+            --muted: rgba(203, 213, 255, 0.62);
+            --muted-strong: rgba(226, 232, 255, 0.8);
+            --label: rgba(203, 213, 255, 0.55);
+            --heading: #ffe08a;
+
+            --panel: rgba(10, 15, 30, 0.82);
+            --panel-border: rgba(125, 211, 252, 0.18);
+            --panel-shadow: rgba(0, 0, 0, 0.55);
+            --divider: rgba(125, 211, 252, 0.16);
+
+            --accent: #ffd166;
+            --accent-text: #0b1020;
+            --danger: #ff7a8a;
+
+            --clock-face: rgba(2, 5, 12, 0.96);
+            --clock-border: rgba(125, 211, 252, 0.35);
+            --clock-shadow: rgba(0, 0, 0, 0.75);
+            --tick: rgba(186, 230, 253, 0.55);
+            --hand-minute: #e6ebff;
+
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(125, 211, 252, 0.2);
+            --input-text: #eaf2ff;
+            --placeholder: rgba(186, 210, 255, 0.45);
+
+            --chip-bg: rgba(125, 211, 252, 0.1);
+            --ok-bg: rgba(74, 222, 128, 0.14);
+            --ok-fg: #6ee7a0;
+            --warn-bg: rgba(251, 191, 36, 0.14);
+            --warn-fg: #fbbf24;
+            --bad-bg: rgba(248, 113, 113, 0.16);
+            --bad-fg: #f87171;
+
+            --btn-shadow: #010206;
+            --btn-border: #010206;
+            --btn-2-bg: #1b2547;
+            --btn-2-fg: #e6ebff;
+            --btn-3-bg: #123047;
+            --btn-3-fg: #d7f6ff;
+
+            --card-bg: #0f1630;
+            --card-text: #e6ebff;
+            --card-border: #2b3a6b;
+            --card-shadow: #010206;
+            --card-glow: rgba(125, 211, 252, 0.08);
+            --card-author: #a9b8ff;
+            --link: #7dd3fc;
+            --link-border: rgba(125, 211, 252, 0.45);
+
+            --nodata-bg: #0d1730;
+            --toast-bg: #123524;
+            --toast-fg: #bbf7d0;
+
+            --theme-icon: #ffd166;
+            --theme-btn-bg: rgba(10, 15, 30, 0.85);
+            --theme-btn-border: rgba(125, 211, 252, 0.3);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            background-color: var(--bg);
+            transition: background-color 0.45s ease;
+        }
 
         body {
             font-family: 'Space Grotesk', 'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-            background: #1d2f8a;
-            color: #f4f6fb;
+            background-color: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             padding: 32px 24px 80px;
+            overflow-x: hidden;
+            transition: background-color 0.45s ease, color 0.45s ease;
+        }
+
+        /* Cahaya latar: netral di tema terang, dramatis di tema gelap. */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 12% 8%, var(--glow-1), transparent 45%),
+                radial-gradient(circle at 88% 2%, var(--glow-2), transparent 40%),
+                radial-gradient(circle at 50% 105%, var(--glow-3), transparent 58%);
         }
 
         .header {
@@ -52,15 +224,21 @@ if ($search_query !== '') {
         .header h1 {
             font-family: 'Fredoka', 'Poppins', sans-serif;
             font-size: clamp(2.4rem, 6vw, 3.4rem);
-            color: #ffd166;
+            color: var(--heading);
             text-transform: uppercase;
             letter-spacing: 0.08em;
             margin-bottom: 12px;
+            transition: color 0.45s ease, text-shadow 0.45s ease;
+        }
+
+        html[data-theme="dark"] .header h1 {
+            text-shadow: 0 0 34px rgba(255, 209, 102, 0.22);
         }
 
         .header p {
             font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.86);
+            color: var(--muted-strong);
+            transition: color 0.45s ease;
         }
 
         .meta-row {
@@ -73,12 +251,13 @@ if ($search_query !== '') {
 
         .meta-card,
         .search-card {
-            background: rgba(9, 15, 40, 0.72);
-            border: 2px solid rgba(255, 255, 255, 0.12);
+            background: var(--panel);
+            border: 2px solid var(--panel-border);
             border-radius: 24px;
             padding: 18px 20px;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+            box-shadow: 0 14px 30px var(--panel-shadow);
             backdrop-filter: blur(10px);
+            transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
         }
 
         .meta-card .label,
@@ -87,8 +266,9 @@ if ($search_query !== '') {
             font-size: 0.84rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.58);
+            color: var(--label);
             margin-bottom: 8px;
+            transition: color 0.45s ease;
         }
 
         .clock {
@@ -107,9 +287,10 @@ if ($search_query !== '') {
             border-radius: 50%;
             background:
                 radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.10), transparent 62%),
-                rgba(9, 15, 40, 0.92);
-            border: 2px solid rgba(255, 255, 255, 0.24);
-            box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.5), 0 10px 24px rgba(0, 0, 0, 0.28);
+                var(--clock-face);
+            border: 2px solid var(--clock-border);
+            box-shadow: inset 0 0 26px var(--clock-shadow), 0 10px 24px var(--panel-shadow);
+            transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
         }
 
         .clock-face::before {
@@ -117,7 +298,7 @@ if ($search_query !== '') {
             position: absolute;
             inset: 7px;
             border-radius: 50%;
-            background: repeating-conic-gradient(from -0.5deg, rgba(255, 255, 255, 0.55) 0 1.2deg, transparent 1.2deg 30deg);
+            background: repeating-conic-gradient(from -0.5deg, var(--tick) 0 1.2deg, transparent 1.2deg 30deg);
             -webkit-mask: radial-gradient(circle, transparent 0 79%, #000 80%);
             mask: radial-gradient(circle, transparent 0 79%, #000 80%);
         }
@@ -134,21 +315,22 @@ if ($search_query !== '') {
             width: 6px;
             height: 34px;
             margin-left: -3px;
-            background: #ffd166;
+            background: var(--accent);
         }
 
         .clock-hand.minute {
             width: 4px;
             height: 48px;
             margin-left: -2px;
-            background: #f4f6fb;
+            background: var(--hand-minute);
         }
 
         .clock-hand.second {
             width: 2px;
             height: 56px;
             margin-left: -1px;
-            background: #ff6b6b;
+            background: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
         }
 
         .clock-center {
@@ -159,8 +341,8 @@ if ($search_query !== '') {
             height: 11px;
             margin: -5.5px 0 0 -5.5px;
             border-radius: 50%;
-            background: #ffd166;
-            box-shadow: 0 0 0 3px rgba(9, 15, 40, 0.95);
+            background: var(--accent);
+            box-shadow: 0 0 0 3px var(--clock-face);
         }
 
         .clock-info {
@@ -174,19 +356,25 @@ if ($search_query !== '') {
             font-weight: 700;
             letter-spacing: 0.06em;
             font-variant-numeric: tabular-nums;
-            color: #ffffff;
+            color: var(--text-strong);
+            transition: color 0.45s ease;
+        }
+
+        html[data-theme="dark"] .clock-digital {
+            text-shadow: 0 0 18px rgba(125, 211, 252, 0.35);
         }
 
         .clock-zone {
             font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--muted);
+            transition: color 0.45s ease;
         }
 
         .clock-compare {
             list-style: none;
             margin-top: 14px;
             padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid var(--divider);
             display: grid;
             gap: 8px;
         }
@@ -203,18 +391,18 @@ if ($search_query !== '') {
             font-size: 0.7rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.55);
+            color: var(--muted);
         }
 
         .cmp-time {
             font-weight: 700;
             font-variant-numeric: tabular-nums;
-            color: #ffffff;
+            color: var(--text-strong);
         }
 
         .cmp-zone {
             font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.55);
+            color: var(--muted);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -225,17 +413,17 @@ if ($search_query !== '') {
             font-variant-numeric: tabular-nums;
             padding: 2px 8px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.7);
+            background: var(--chip-bg);
+            color: var(--muted);
             white-space: nowrap;
         }
 
-        .cmp-delta.ok   { background: rgba(74, 222, 128, 0.16); color: #86efac; }
-        .cmp-delta.warn { background: rgba(251, 191, 36, 0.16); color: #fcd34d; }
-        .cmp-delta.bad  { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+        .cmp-delta.ok   { background: var(--ok-bg); color: var(--ok-fg); }
+        .cmp-delta.warn { background: var(--warn-bg); color: var(--warn-fg); }
+        .cmp-delta.bad  { background: var(--bad-bg); color: var(--bad-fg); }
 
         .cmp-zone.bad {
-            color: #fca5a5;
+            color: var(--bad-fg);
         }
 
         /* Sembunyikan rincian bila waktu & zona ketiganya sudah sinkron. */
@@ -246,15 +434,15 @@ if ($search_query !== '') {
         .clock-status {
             margin-top: 12px;
             font-size: 0.74rem;
-            color: rgba(255, 255, 255, 0.55);
+            color: var(--muted);
         }
 
         .clock-status.ok {
-            color: #86efac;
+            color: var(--ok-fg);
         }
 
         .clock-status.warn {
-            color: #fcd34d;
+            color: var(--warn-fg);
         }
 
         .search-form {
@@ -266,24 +454,26 @@ if ($search_query !== '') {
         .search-form input {
             flex: 1;
             min-width: 180px;
-            border: 2px solid rgba(255, 255, 255, 0.16);
+            border: 2px solid var(--input-border);
             border-radius: 999px;
             padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #fff;
+            background: var(--input-bg);
+            color: var(--input-text);
             font: inherit;
+            transition: background 0.45s ease, border-color 0.45s ease, color 0.45s ease;
         }
 
-        .search-form input::placeholder { color: rgba(255, 255, 255, 0.55); }
+        .search-form input::placeholder { color: var(--placeholder); }
 
         .search-form button {
             border: 0;
             border-radius: 999px;
             padding: 14px 20px;
-            background: #ffd166;
-            color: #142044;
+            background: var(--accent);
+            color: var(--accent-text);
             font-weight: 700;
             cursor: pointer;
+            transition: background 0.45s ease, color 0.45s ease;
         }
 
         .search-form a {
@@ -292,17 +482,19 @@ if ($search_query !== '') {
             justify-content: center;
             padding: 14px 18px;
             border-radius: 999px;
-            border: 2px solid rgba(255, 255, 255, 0.16);
-            color: #fff;
+            border: 2px solid var(--input-border);
+            color: var(--text-strong);
             text-decoration: none;
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--input-bg);
+            transition: background 0.45s ease, border-color 0.45s ease, color 0.45s ease;
         }
 
         .search-summary {
             max-width: 1300px;
             margin: 0 auto 18px;
-            color: rgba(255, 255, 255, 0.82);
+            color: var(--muted-strong);
             font-size: 0.98rem;
+            transition: color 0.45s ease;
         }
 
         .btn-submit {
@@ -313,18 +505,29 @@ if ($search_query !== '') {
             margin-top: 24px;
             padding: 16px 32px;
             border-radius: 999px;
-            background: #ffd166;
-            color: #142044;
+            background: var(--accent);
+            color: var(--accent-text);
             font-weight: 600;
             text-decoration: none;
-            box-shadow: 0 12px 0 #0f172a;
-            border: 3px solid #0f172a;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 12px 0 var(--btn-shadow);
+            border: 3px solid var(--btn-border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease,
+                        background 0.45s ease, color 0.45s ease, border-color 0.45s ease;
         }
 
         .btn-submit:hover {
             transform: translateY(-3px);
-            box-shadow: 0 16px 0 #0f172a;
+            box-shadow: 0 16px 0 var(--btn-shadow);
+        }
+
+        .btn-submit.btn-secondary {
+            background: var(--btn-2-bg);
+            color: var(--btn-2-fg);
+        }
+
+        .btn-submit.btn-tertiary {
+            background: var(--btn-3-bg);
+            color: var(--btn-3-fg);
         }
 
         .hero-actions {
@@ -344,16 +547,18 @@ if ($search_query !== '') {
         }
 
         .epic-card {
-            background: #d9e3ff;
+            background: var(--card-bg);
             border-radius: 24px 24px 40px 24px;
             padding: 32px;
-            color: #0f172a;
-            border: 3px solid #0f172a;
-            box-shadow: 10px 14px 0 #0b1140;
+            color: var(--card-text);
+            border: 3px solid var(--card-border);
+            box-shadow: 10px 14px 0 var(--card-shadow), 0 0 40px var(--card-glow);
             min-height: 220px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: background 0.45s ease, color 0.45s ease,
+                        border-color 0.45s ease, box-shadow 0.45s ease;
         }
 
         .epic-card .quote {
@@ -365,26 +570,30 @@ if ($search_query !== '') {
 
         .epic-card .author {
             font-size: 0.95rem;
-            color: #1f285b;
+            color: var(--card-author);
             font-weight: 600;
+            transition: color 0.45s ease;
         }
 
         .epic-card .author a {
-            color: #0f62fe;
+            color: var(--link);
             text-decoration: none;
             font-weight: 700;
-            border-bottom: 2px solid rgba(15, 98, 254, 0.4);
+            border-bottom: 2px solid var(--link-border);
+            transition: color 0.45s ease, border-color 0.45s ease;
         }
 
         .no-data {
             grid-column: 1 / -1;
             text-align: center;
             padding: 64px 24px;
-            background: #b7f0ff;
+            background: var(--nodata-bg);
             border-radius: 24px;
-            border: 3px dashed #0f172a;
-            color: #0f172a;
-            box-shadow: 8px 12px 0 #0b1140;
+            border: 3px dashed var(--card-border);
+            color: var(--card-text);
+            box-shadow: 8px 12px 0 var(--card-shadow), 0 0 40px var(--card-glow);
+            transition: background 0.45s ease, color 0.45s ease,
+                        border-color 0.45s ease, box-shadow 0.45s ease;
         }
 
         .no-data h2 {
@@ -397,16 +606,141 @@ if ($search_query !== '') {
             top: 20px;
             right: 20px;
             padding: 14px 20px;
-            background: #bbf7d0;
-            color: #0f172a;
+            background: var(--toast-bg);
+            color: var(--toast-fg);
             border-radius: 12px;
             font-weight: 600;
-            box-shadow: 6px 10px 0 #0b1140;
-            border: 3px solid #0f172a;
+            box-shadow: 6px 10px 0 var(--card-shadow);
+            border: 3px solid var(--card-border);
+            transition: background 0.45s ease, color 0.45s ease,
+                        border-color 0.45s ease, box-shadow 0.45s ease;
+        }
+
+        /* ============================================================
+           Tombol tema
+           ============================================================ */
+        .theme-toggle {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 9999;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid var(--theme-btn-border);
+            background: var(--theme-btn-bg);
+            color: var(--theme-icon);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            box-shadow: 0 12px 30px var(--panel-shadow);
+            backdrop-filter: blur(10px);
+            transition: transform 0.25s ease, background 0.45s ease,
+                        color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.94);
+        }
+
+        .theme-toggle:focus-visible {
+            outline: 3px solid var(--accent);
+            outline-offset: 4px;
+        }
+
+        .theme-toggle::before {
+            content: "";
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .theme-toggle.burst::before {
+            animation: theme-burst 0.7s ease-out;
+        }
+
+        @keyframes theme-burst {
+            0%   { transform: scale(0.7); opacity: 0.9; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        .theme-icon {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+        }
+
+        .theme-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        html[data-theme="light"] .theme-icon-sun  { opacity: 0; transform: rotate(-90deg) scale(0.35); }
+        html[data-theme="light"] .theme-icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+        html[data-theme="dark"]  .theme-icon-sun  { opacity: 1; transform: rotate(0deg) scale(1); }
+        html[data-theme="dark"]  .theme-icon-moon { opacity: 0; transform: rotate(90deg) scale(0.35); }
+
+        /* ============================================================
+           Transisi tema (View Transitions + fallback sweep)
+           ============================================================ */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation: none;
+            mix-blend-mode: normal;
+        }
+
+        ::view-transition-old(root) { z-index: 1; }
+        ::view-transition-new(root) { z-index: 2; }
+
+        .theme-sweep {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            background: radial-gradient(circle at var(--sweep-x) var(--sweep-y),
+                var(--sweep-color) 0%,
+                var(--sweep-color) 35%,
+                transparent 72%);
+            clip-path: circle(0 at var(--sweep-x) var(--sweep-y));
+            opacity: 1;
+            transition: clip-path 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease;
+        }
+
+        .theme-sweep.run {
+            clip-path: circle(150vmax at var(--sweep-x) var(--sweep-y));
+            opacity: 0;
+        }
+
+        body.theme-transitioning,
+        body.theme-transitioning *,
+        body.theme-transitioning *::before,
+        body.theme-transitioning *::after {
+            transition: background-color 0.5s ease, color 0.5s ease,
+                        border-color 0.5s ease, box-shadow 0.5s ease,
+                        fill 0.5s ease, stroke 0.5s ease !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
 
         @media (max-width: 768px) {
-            body { padding: 24px 16px 60px; }
+            body { padding: 24px 16px 100px; }
             .meta-row { grid-template-columns: 1fr; }
             .hero-actions {
                 gap: 8px;
@@ -425,6 +759,12 @@ if ($search_query !== '') {
             }
             .card-container { grid-template-columns: 1fr; }
             .epic-card { padding: 24px; }
+            .theme-toggle {
+                width: 50px;
+                height: 50px;
+                right: 16px;
+                bottom: 16px;
+            }
         }
     </style>
 </head>
@@ -455,13 +795,28 @@ if ($search_query !== '') {
         </script>
     <?php endif; ?>
 
+    <button type="button" class="theme-toggle" id="theme-toggle"
+            aria-label="Aktifkan tema gelap" aria-pressed="false" title="Mode gelap">
+        <span class="theme-icon theme-icon-moon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+            </svg>
+        </span>
+        <span class="theme-icon theme-icon-sun" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+            </svg>
+        </span>
+    </button>
+
     <div class="header">
         <h1>Refleksi Mingguan</h1>
         <p>Level up perjalanan mentee dengan AI.</p>
         <div class="hero-actions">
             <a href="form_interactive.php" class="btn-submit">✍️ Form Interaktif</a>
-            <a href="form.php" class="btn-submit" style="background:#d9e3ff; color:#0f172a;">📝 Form Klasik</a>
-            <a href="form_psikologi.php" class="btn-submit" style="background:#b7f0ff; color:#0f172a;">🧠 Tes Psikologi Singkat</a>
+            <a href="form.php" class="btn-submit btn-secondary">📝 Form Klasik</a>
+            <a href="form_psikologi.php" class="btn-submit btn-tertiary">🧠 Tes Psikologi Singkat</a>
         </div>
     </div>
 
@@ -822,6 +1177,118 @@ if ($search_query !== '') {
 
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden) syncTime();
+            });
+        })();
+    </script>
+
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var btn = document.getElementById('theme-toggle');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (!btn) return;
+
+            var reduceMotion = false;
+            try {
+                reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            } catch (e) {}
+
+            function temaSaatIni() {
+                return root.dataset.theme === 'dark' ? 'dark' : 'light';
+            }
+
+            function terapkanTema(theme) {
+                root.dataset.theme = theme;
+
+                try {
+                    localStorage.setItem('refleksi-theme', theme);
+                } catch (e) {}
+
+                var gelap = theme === 'dark';
+                btn.setAttribute('aria-pressed', gelap ? 'true' : 'false');
+                btn.setAttribute('aria-label', gelap ? 'Aktifkan tema terang' : 'Aktifkan tema gelap');
+                btn.title = gelap ? 'Mode terang' : 'Mode gelap';
+
+                if (meta) {
+                    meta.setAttribute('content', gelap ? '#05070f' : '#1d2f8a');
+                }
+            }
+
+            // Samakan status tombol dengan tema yang sudah dipasang di <head>.
+            terapkanTema(temaSaatIni());
+
+            function ledakanTombol() {
+                btn.classList.remove('burst');
+                // Paksa reflow agar animasi bisa diputar ulang.
+                void btn.offsetWidth;
+                btn.classList.add('burst');
+            }
+
+            function transisiFallback(theme, cx, cy) {
+                var overlay = document.createElement('div');
+                overlay.className = 'theme-sweep';
+                overlay.style.setProperty('--sweep-x', cx + 'px');
+                overlay.style.setProperty('--sweep-y', cy + 'px');
+                overlay.style.setProperty('--sweep-color', theme === 'dark' ? '#05070f' : '#1d2f8a');
+
+                document.body.appendChild(overlay);
+                document.body.classList.add('theme-transitioning');
+
+                requestAnimationFrame(function () {
+                    overlay.classList.add('run');
+                });
+
+                setTimeout(function () {
+                    terapkanTema(theme);
+                }, 240);
+
+                setTimeout(function () {
+                    overlay.remove();
+                    document.body.classList.remove('theme-transitioning');
+                }, 950);
+            }
+
+            btn.addEventListener('click', function () {
+                var next = temaSaatIni() === 'dark' ? 'light' : 'dark';
+                var rect = btn.getBoundingClientRect();
+                var cx = rect.left + rect.width / 2;
+                var cy = rect.top + rect.height / 2;
+
+                ledakanTombol();
+
+                if (reduceMotion) {
+                    terapkanTema(next);
+                    return;
+                }
+
+                if (typeof document.startViewTransition === 'function') {
+                    var transition = document.startViewTransition(function () {
+                        terapkanTema(next);
+                    });
+
+                    transition.ready.then(function () {
+                        var radius = Math.hypot(
+                            Math.max(cx, window.innerWidth - cx),
+                            Math.max(cy, window.innerHeight - cy)
+                        );
+
+                        root.animate(
+                            {
+                                clipPath: [
+                                    'circle(0px at ' + cx + 'px ' + cy + 'px)',
+                                    'circle(' + radius + 'px at ' + cx + 'px ' + cy + 'px)'
+                                ]
+                            },
+                            {
+                                duration: 780,
+                                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                                pseudoElement: '::view-transition-new(root)'
+                            }
+                        );
+                    }).catch(function () {});
+                } else {
+                    transisiFallback(next, cx, cy);
+                }
             });
         })();
     </script>
