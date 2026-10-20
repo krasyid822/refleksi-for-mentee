@@ -108,6 +108,8 @@ Secara default file berikut **tidak** ditarik: `.git-ftp.log` dan `.env`
 ## Berkas utama
 
 - `env.php` - bootstrap: memuat `.env`, mendefinisikan konstanta, dan membuat koneksi database.
+- `clock_helper.php` - membaca waktu server PHP & MySQL untuk kartu "Waktu Sekarang".
+- `time.php` - endpoint JSON sumber waktu server (dipakai jam analog di `index.php`).
 - `run.sh` - menjalankan server PHP untuk pengembangan.
 - `push.sh` - push ke GitHub dan/atau server FTP.
 - `pull.sh` - tarik file terbaru dari server FTP tanpa menghapus file lokal.
