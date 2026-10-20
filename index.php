@@ -41,8 +41,10 @@ if ($search_query !== '') {
         })();
     </script>
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="page-transition.css">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <script src="page-transition.js" defer></script>
     <script src="pwa-register.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Space+Grotesk:wght@400;500&display=swap');
@@ -823,9 +825,7 @@ if ($search_query !== '') {
         <h1>Refleksi Mingguan</h1>
         <p>Level up perjalanan mentee dengan AI.</p>
         <div class="hero-actions">
-            <a href="form_interactive.php" class="btn-submit">✍️ Form Interaktif</a>
-            <a href="form.php" class="btn-submit btn-secondary">📝 Form Klasik</a>
-            <a href="form_psikologi.php" class="btn-submit btn-tertiary">🧠 Tes Psikologi Singkat</a>
+            <a href="form.php" class="btn-submit">📝 Form Klasik</a>
             <a href="form_bebas.php" class="btn-submit btn-quaternary">🪶 Form Bebas</a>
         </div>
     </div>

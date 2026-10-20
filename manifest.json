@@ -11,7 +11,7 @@
   "lang": "id",
   "dir": "ltr",
   "categories": ["productivity", "lifestyle"],
-  "description": "Dashboard refleksi mentee dengan formulir klasik, interaktif, psikologi, dan form bebas berbantuan AI.",
+  "description": "Dashboard refleksi mentee dengan Form Klasik terpadu (check-in interaktif + tes psikologi) dan Form Bebas berbantuan AI.",
   "icons": [
     {
       "src": "icons/icon-192.svg",
@@ -34,9 +34,9 @@
       "icons": [{ "src": "icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
-      "name": "Tes Psikologi",
-      "short_name": "Psikologi",
-      "url": "./form_psikologi.php",
+      "name": "Form Klasik",
+      "short_name": "Form Klasik",
+      "url": "./form.php",
       "icons": [{ "src": "icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]

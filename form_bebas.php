@@ -325,8 +325,10 @@ $csrf_baru = (string) ($_SESSION['form_bebas_csrf'] ?? $csrf);
     <title>Form Bebas - Refleksi Mentee</title>
     <meta name="theme-color" content="#1d2f8a">
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="page-transition.css">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <script src="page-transition.js" defer></script>
     <script src="pwa-register.js" defer></script>
     <script src="audio-player.js" defer></script>
     <style>
@@ -533,8 +535,6 @@ $csrf_baru = (string) ($_SESSION['form_bebas_csrf'] ?? $csrf);
     <nav class="nav">
         <a href="index.php">🏠 Dashboard</a>
         <a href="form.php">📝 Form Klasik</a>
-        <a href="form_interactive.php">✨ Form Interaktif</a>
-        <a href="form_psikologi.php">🧠 Tes Psikologi</a>
         <a href="form_bebas.php" class="active">🪶 Form Bebas</a>
     </nav>
 

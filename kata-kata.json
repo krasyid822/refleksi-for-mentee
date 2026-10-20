@@ -1,8 +1,8 @@
 {
     "version": 1,
-    "generated_at": 0,
+    "generated_at": 1792481178,
     "retry_after": 0,
-    "source": "seed",
+    "source": "ai",
     "items": [
         "Apa yang paling kamu pelajari minggu ini?",
         "Momen kecil apa yang membuatmu tersenyum?",
@@ -15,6 +15,19 @@
         "Apa yang membuatmu merasa cukup akhir-akhir ini?",
         "Tantangan apa yang sedang mengajarkanmu sesuatu?",
         "Apa yang ingin kamu lepaskan minggu ini?",
-        "Bagaimana perasaanmu saat ini, tanpa perlu dijelaskan panjang?"
-    ]
+        "Bagaimana perasaanmu saat ini, tanpa perlu dijelaskan panjang?",
+        "Pelajaran apa yang paling kamu dapatkan dari pengalaman terakhir?",
+        "Hal apa yang ingin kamu pahami lebih dalam tentang dirimu sendiri?",
+        "Emosi apa yang paling banyak muncul hari ini, dan apa pemicunya?",
+        "Ketika emosi terasa berat, apa yang biasanya menemanimu dengan tenang?",
+        "Hubungan apa yang ingin kamu jaga dengan lebih baik dalam waktu dekat?",
+        "Siapa yang membuatmu merasa diterima, dan bagaimana kamu ingin membalas kebaikan itu?",
+        "Kapan energimu terasa paling kuat, dan kegiatan apa yang menyertainya?",
+        "Bagian mana dari harimu yang paling terasa penuh energi?",
+        "Hal sederhana apa yang membuatmu bersyukur hari ini?",
+        "Keberhasilan kecil apa yang kamu syukuri meski sering dianggap biasa?",
+        "Langkah kecil apa yang bisa kamu mulai hari ini tanpa memaksa diri?",
+        "Bagaimana kamu bisa menjaga langkah kecil itu tetap ringan dan konsisten?"
+    ],
+    "last_model": "minimax/minimax-m3.1-flash:free"
 }

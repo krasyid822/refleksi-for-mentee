@@ -1,6 +1,12 @@
 <?php
 // File: gemini_helper.php
 
+// Utamakan OpenRouter server-side (retry/fallback model gratis). Gemini hanya
+// dipakai sebagai cadangan bila OpenRouter tidak tersedia atau gagal.
+if (!function_exists('openrouter_generate_text')) {
+    require_once __DIR__ . '/openrouter_helper.php';
+}
+
 function panggilGeminiDariPrompt($prompt) {
     if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY' || empty(GEMINI_API_KEY)) {
         return ['sukses' => false, 'error' => 'Kunci API Gemini belum diatur di file .env.'];
@@ -65,7 +71,37 @@ function panggilGemini($data_refleksi) {
               "Catatan Tambahan: " . ($data_refleksi['catatan_lain'] ?: 'Tidak ada') . "\n" .
               "======================================================";
 
-    return panggilGeminiDariPrompt($prompt);
+    // OpenRouter dulu (server-side, model gratis dengan fallback).
+    $openrouterError = '';
+    if (function_exists('openrouter_generate_text')) {
+        @set_time_limit(180);
+        $system = 'Kamu menulis satu kalimat epik dalam Bahasa Indonesia yang singkat, hangat, reflektif,'
+            . ' tidak menghakimi, tanpa diagnosis medis, dan tanpa nasihat yang menggurui.'
+            . ' Balas hanya kalimatnya, maksimal 35 kata, tanpa tanda kutip pembungkus.';
+        $hasil = openrouter_generate_text($system, $prompt, null, 8);
+        if (!empty($hasil['ok'])) {
+            $kalimat = trim((string) ($hasil['text'] ?? ''));
+            $kalimat = trim($kalimat, " \t\n\r\0\x0B\"'");
+            $kalimat = str_replace(['*', '"'], '', $kalimat);
+            if ($kalimat !== '') {
+                return ['sukses' => true, 'kalimat' => $kalimat];
+            }
+        }
+        $openrouterError = (string) ($hasil['error'] ?? 'OpenRouter gagal.');
+    } else {
+        $openrouterError = 'Helper OpenRouter tidak tersedia.';
+    }
+
+    // Cadangan: Gemini.
+    $fallback = panggilGeminiDariPrompt($prompt);
+    if (!empty($fallback['sukses'])) {
+        return $fallback;
+    }
+
+    return [
+        'sukses' => false,
+        'error'  => $openrouterError . ' | Gemini: ' . ($fallback['error'] ?? 'gagal'),
+    ];
 }
 
 function panggilGeminiPsikologi($data_refleksi) {

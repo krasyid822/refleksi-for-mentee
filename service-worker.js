@@ -1,11 +1,13 @@
 // Service worker Refleksi Mentee.
 // BUILD_ID diubah otomatis oleh build.sh pada setiap push.
-const BUILD_ID = '20261020052106-4';
+const BUILD_ID = '20261020072808-5';
 const CACHE_NAME = 'refleksi-cache-' + BUILD_ID;
 const OFFLINE_URL = 'offline.html';
 const STATIC_ASSETS = [
   'manifest.json',
   'pwa-register.js',
+  'page-transition.js',
+  'page-transition.css',
   'audio-player.js',
   'build.json',
   'offline.html',

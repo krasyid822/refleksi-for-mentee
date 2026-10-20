@@ -14,7 +14,9 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
-    $mode_form = (strpos($row['pencapaian'], 'Hasil check-in psikologi singkat:') === 0) ? 'Tes Psikologi Singkat' : 'Refleksi Mingguan';
+    $mode_form = (strpos($row['pencapaian'], 'Hasil check-in psikologi singkat:') === 0)
+        ? 'Tes Psikologi Singkat'
+        : ((strpos((string) $row['penjelasan_energi'], 'Check-in:') === 0) ? 'Form Klasik Terpadu' : 'Refleksi Mingguan');
 
     // ==================================================================
     // PERUBAHAN LOGIKA PRIVASI DI SINI

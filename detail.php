@@ -30,7 +30,9 @@ $stmt_select->execute();
 $result = $stmt_select->get_result();
 if ($result->num_rows > 0) {
     $refleksi = $result->fetch_assoc();
-    $mode_form = (strpos($refleksi['pencapaian'], 'Hasil check-in psikologi singkat:') === 0) ? 'Tes Psikologi Singkat' : 'Refleksi Mingguan';
+    $mode_form = (strpos($refleksi['pencapaian'], 'Hasil check-in psikologi singkat:') === 0)
+        ? 'Tes Psikologi Singkat'
+        : ((strpos((string) $refleksi['penjelasan_energi'], 'Check-in:') === 0) ? 'Form Klasik Terpadu' : 'Refleksi Mingguan');
 } else {
     header("Location: index.php");
     exit();
@@ -54,8 +56,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['sandi_cek'])) {
     <title>Detail Refleksi</title>
     <meta name="theme-color" content="#123b2c">
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="page-transition.css">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <script src="page-transition.js" defer></script>
     <script src="audio-player.js" defer></script>
     <script src="pwa-register.js" defer></script>
     <style>
@@ -314,8 +318,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['sandi_cek'])) {
     <div class="nav-links">
         <a href="index.php" class="nav-link">🏠 Dashboard</a>
         <a href="form.php" class="nav-link">📝 Form Klasik</a>
-        <a href="form_interactive.php" class="nav-link">✨ Form Interaktif</a>
-        <a href="form_psikologi.php" class="nav-link">🧠 Tes Psikologi</a>
+        <a href="form_bebas.php" class="nav-link">🪶 Form Bebas</a>
         <a href="#" class="nav-link active">🔎 Detail</a>
     </div>
 

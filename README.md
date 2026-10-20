@@ -108,6 +108,33 @@ Build juga bisa dijalankan manual:
 ./build.sh
 ```
 
+## Transisi halaman & splash loading
+
+Perpindahan antar halaman memakai **View Transitions API** (cross-document) melalui `page-transition.css`. Judul halaman dan navigasi ikut dianimasikan; browser yang belum mendukung tetap menjalankan navigasi normal.
+
+`page-transition.js` menambahkan splash loading yang hanya muncul bila navigasi terasa lambat:
+
+- link internal dan submit form memicu splash setelah ±320 ms bila halaman belum berpindah;
+- status berubah mengikuti proses, mis. "Membuka Form Klasik", "AI sedang menyusun kalimat epik...", atau "AI sedang memetakan cerita ke kolom database...";
+- splash di halaman baru tetap tampil sampai `load` selesai bila prosesnya melewati ambang waktu;
+- tekan `Esc` untuk menutup splash secara manual;
+- `prefers-reduced-motion` menonaktifkan animasi, tetapi status loading tetap tersedia.
+
+Kedua file didaftarkan di `STATIC_ASSETS` service worker, sehingga ikut tersedia saat offline setelah build berikutnya.
+
+## Form Klasik terpadu
+
+`form.php` kini menjadi satu-satunya form utama. Di dalamnya ada bagian **Check-in & Refleksi Terbimbing** yang opsional dan menggabungkan UI Form Interaktif serta Tes Psikologi:
+
+- slider mood, energi, stres, fokus, dan pemulihan;
+- pilihan suasana hati, reaksi saat tertekan, dan kebutuhan utama;
+- tag pencapaian, tantangan, pembelajaran, fokus minggu depan, dan bantuan mentor;
+- teks pemicu utama, cerita singkat, dan langkah kecil berikutnya.
+
+Semua isian check-in dilebur otomatis ke kolom `refleksi_mingguan` yang sudah ada, lalu ikut dikirim ke AI untuk membuat kalimat epik. Tidak ada kolom database baru.
+
+`form_interactive.php` dan `form_psikologi.php` dipertahankan sebagai redirect permanen ke `form.php` agar tautan lama tetap bekerja. `form_bebas.php` tetap tersedia sebagai jalur satu kolom berbantuan AI.
+
 ## Form Bebas berbantuan AI
 
 `form_bebas.php` hanya punya satu kolom teks bebas. Saat dikirim:
@@ -179,11 +206,14 @@ Secara default file berikut **tidak** ditarik: `.git-ftp.log`, `.env`, dan `.env
 - `env.php` - bootstrap: memuat `.env`/`.env.enc`, mendefinisikan konstanta, dan membuat koneksi database.
 - `app_helper.php` - folder cache, baca/tulis JSON, dan penyamaran teks.
 - `openrouter_helper.php` - klien OpenRouter server-side dengan fallback model.
-- `ai_proxy.php` - endpoint aman untuk model & kalimat epik form psikologi.
+- `ai_proxy.php` - endpoint aman untuk model & kalimat epik.
 - `schema_helper.php` - deteksi varian tabel, validasi, dan INSERT dinamis.
 - `github_helper.php` - pembuatan issue untuk skema baru.
 - `kata_kata_helper.php` / `kata-kata-refresh.php` - cache pertanyaan refleksi.
+- `form.php` - Form Klasik terpadu dengan check-in interaktif & tes psikologi.
+- `form_interactive.php` / `form_psikologi.php` - redirect permanen ke `form.php`.
 - `form_bebas.php` - form satu kolom berbantuan AI.
+- `page-transition.js` / `page-transition.css` - View Transitions API dan splash loading antar halaman.
 - `build.sh` / `build.json` - versi build dan reset cache PWA.
 - `let-encrypt.sh` - enkripsi `.env` dan pemasangan kunci di `env.php`.
 - `clock_helper.php` - membaca waktu server PHP & MySQL untuk kartu "Waktu Sekarang".
@@ -198,13 +228,12 @@ Secara default file berikut **tidak** ditarik: `.git-ftp.log`, `.env`, dan `.env
 https://g.co/gemini/share/0a9d1d95003c
 
 ## Changelogs
+- Transisi antar halaman memakai View Transitions API dan splash loading dengan status proses yang informatif.
+- Form Klasik terpadu: check-in interaktif dan tes psikologi dilebur ke `form.php`; halaman lama diarahkan permanen.
+- Form Klasik memakai OpenRouter server-side dengan retry/fallback model gratis (Gemini hanya cadangan).
 - Form Bebas dengan ekstraksi AI dan pemetaan skema dinamis.
 - Cache kata-kata AI (`kata-kata.json`) dengan siklus refresh.
 - OpenRouter dipindahkan sepenuhnya ke server (API key tidak lagi bocor ke browser).
 - Enkripsi `.env.enc` + kunci terpatri di `env.php`.
 - Build PWA otomatis dan reset cache saat push.
 - Overlay audio memuat `div.clock` dan memberi pemicu saat autoplay diblokir browser.
-- Menggunakan teknologi View Transitions API.
-
-## Catatan
-satukan semua varian form sebelumnya menjadi Form Klasik.

@@ -5,14 +5,58 @@ include 'gemini_helper.php';
 $pesan_sukses = '';
 $pesan_error = '';
 
-// Inisialisasi variabel untuk menyimpan nilai input (untuk kasus gagal submit)
+// Nilai awal form. Bagian check-in adalah gabungan UI Form Interaktif dan
+// Tes Psikologi; semuanya opsional dan dilebur ke kolom refleksi yang sudah ada.
 $input_values = [
     'nama_mentee' => '', 'nama_mentor' => '', 'samarkan_nama' => false, 'sandi_nama' => '',
-    'periode_minggu' => '', 'periode_tanggal' => '', 'pencapaian' => '', 'kemajuan_tujuan' => '',
-    'tantangan' => '', 'pembelajaran_baru' => '', 'skor_energi' => '', 'penjelasan_energi' => '',
-    'momen_berkesan' => '', 'prioritas_mingguan' => '', 'tujuan_spesifik' => '', 'topik_diskusi' => '',
-    'bantuan_diharapkan' => [], 'catatan_lain' => ''
+    'periode_minggu' => '', 'periode_tanggal' => '',
+    'pencapaian' => '', 'kemajuan_tujuan' => '', 'tantangan' => '', 'pembelajaran_baru' => '',
+    'skor_energi' => 5, 'penjelasan_energi' => '', 'momen_berkesan' => '', 'prioritas_mingguan' => '',
+    'tujuan_spesifik' => '', 'topik_diskusi' => '', 'bantuan_diharapkan' => [], 'catatan_lain' => '',
+    'mood_level' => 5, 'stress_level' => 5, 'fokus_level' => 5, 'pulih_level' => 5,
+    'suasana_hati' => '', 'reaksi_tekanan' => '', 'kebutuhan_utama' => '',
+    'achievement_tags' => [], 'challenge_tags' => [], 'learning_tags' => [],
+    'next_week_focus' => [], 'mentor_help' => [],
+    'pemicu_utama' => '', 'cerita_singkat' => '', 'langkah_kecil' => ''
 ];
+
+$checkin_terisi = false;
+
+// Pilihan yang dulu ada di Form Interaktif dan Tes Psikologi.
+$suasana_options = ['Tenang', 'Campur aduk', 'Cemas', 'Lelah', 'Bersemangat'];
+$reaksi_options = ['Berdiam dulu', 'Cerita ke orang terdekat', 'Menyusun daftar langkah', 'Ibadah atau meditasi', 'Olahraga atau bergerak'];
+$kebutuhan_options = ['Istirahat', 'Dukungan', 'Kejelasan', 'Motivasi', 'Ruang sendiri'];
+$achievement_tag_options = ['Tugas selesai tepat waktu', 'Ikut kegiatan UKMI', 'Belajar skill baru', 'Membantu teman', 'IPK naik', 'Dapat insight baru'];
+$challenge_tag_options = ['Manajemen waktu', 'Materi kuliah sulit', 'Kurang motivasi', 'Masalah pribadi', 'Keuangan', 'Kesehatan'];
+$learning_tag_options = ['Skill teknis', 'Soft skill', 'Self awareness', 'Networking', 'Spiritualitas', 'Life lesson'];
+$next_week_focus_options = ['Fokus akademik', 'Kegiatan organisasi', 'Skill development', 'Self care', 'Ibadah', 'Project'];
+$mentor_help_options = ['Brainstorming', 'Feedback', 'Solusi masalah', 'Motivasi'];
+
+if (!function_exists('form_clean_list')) {
+    function form_clean_list($value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+        $out = [];
+        foreach ($value as $item) {
+            $item = trim((string) $item);
+            if ($item !== '' && !in_array($item, $out, true)) {
+                $out[] = $item;
+            }
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('form_join_notes')) {
+    function form_join_notes(array $parts): string
+    {
+        $parts = array_map(static fn($v) => trim((string) $v), $parts);
+        $parts = array_values(array_filter($parts, static fn($v) => $v !== ''));
+        return implode("\n", $parts);
+    }
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Simpan semua inputan ke dalam variabel, agar bisa ditampilkan kembali jika gagal
@@ -21,48 +65,191 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $input_values[$key] = $_POST[$key];
         }
     }
-    $input_values['samarkan_nama'] = isset($_POST['samarkan_nama']); // Khusus checkbox
+    $input_values['samarkan_nama'] = isset($_POST['samarkan_nama']);
 
-    // 1. Kumpulkan data refleksi untuk AI
+    foreach (['bantuan_diharapkan', 'achievement_tags', 'challenge_tags', 'learning_tags', 'next_week_focus', 'mentor_help'] as $listKey) {
+        $input_values[$listKey] = form_clean_list($input_values[$listKey] ?? []);
+    }
+    foreach (['skor_energi', 'mood_level', 'stress_level', 'fokus_level', 'pulih_level'] as $numKey) {
+        $nilai = (int) ($input_values[$numKey] ?? 5);
+        $input_values[$numKey] = max(1, min(10, $nilai > 0 ? $nilai : 5));
+    }
+
+    $checkin_terisi = (int) $input_values['mood_level'] !== 5
+        || (int) $input_values['stress_level'] !== 5
+        || (int) $input_values['fokus_level'] !== 5
+        || (int) $input_values['pulih_level'] !== 5
+        || $input_values['suasana_hati'] !== ''
+        || $input_values['reaksi_tekanan'] !== ''
+        || $input_values['kebutuhan_utama'] !== ''
+        || $input_values['achievement_tags'] !== []
+        || $input_values['challenge_tags'] !== []
+        || $input_values['learning_tags'] !== []
+        || $input_values['next_week_focus'] !== []
+        || $input_values['mentor_help'] !== []
+        || trim((string) $input_values['pemicu_utama']) !== ''
+        || trim((string) $input_values['cerita_singkat']) !== ''
+        || trim((string) $input_values['langkah_kecil']) !== '';
+
+    // Gabungkan input klasik + check-in. Nilai final inilah yang dipakai AI
+    // dan disimpan ke database, sehingga tidak ada kolom baru yang diperlukan.
+    $pencapaian = trim((string) $input_values['pencapaian']);
+    if ($input_values['achievement_tags'] !== []) {
+        $pencapaian = form_join_notes([
+            'Pencapaian yang dipilih: ' . implode(', ', $input_values['achievement_tags']),
+            $pencapaian,
+        ]);
+    }
+
+    $tantangan = trim((string) $input_values['tantangan']);
+    if ($input_values['challenge_tags'] !== []) {
+        $tantangan = form_join_notes([
+            'Tantangan yang dihadapi: ' . implode(', ', $input_values['challenge_tags']),
+            $tantangan,
+        ]);
+    }
+    if (trim((string) $input_values['pemicu_utama']) !== '') {
+        $tantangan = form_join_notes([
+            $tantangan,
+            'Pemicu utama: ' . trim((string) $input_values['pemicu_utama']),
+        ]);
+    }
+
+    $pembelajaran = trim((string) $input_values['pembelajaran_baru']);
+    if ($input_values['learning_tags'] !== []) {
+        $pembelajaran = form_join_notes([
+            'Pembelajaran: ' . implode(', ', $input_values['learning_tags']),
+            $pembelajaran,
+        ]);
+    }
+
+    $kemajuan = trim((string) $input_values['kemajuan_tujuan']);
+    $prioritas = trim((string) $input_values['prioritas_mingguan']);
+    if ($input_values['next_week_focus'] !== []) {
+        $prioritas = form_join_notes([
+            'Fokus minggu depan: ' . implode(', ', $input_values['next_week_focus']),
+            $prioritas,
+        ]);
+    }
+
+    $tujuan_spesifik = trim((string) $input_values['tujuan_spesifik']);
+    if (trim((string) $input_values['langkah_kecil']) !== '') {
+        $tujuan_spesifik = form_join_notes([
+            $tujuan_spesifik,
+            'Langkah kecil: ' . trim((string) $input_values['langkah_kecil']),
+        ]);
+    }
+
+    $penjelasan_energi = trim((string) $input_values['penjelasan_energi']);
+    if ($checkin_terisi) {
+        $checkinParts = [
+            'Check-in: Mood ' . $input_values['mood_level'] . '/10'
+                . ', Energi ' . $input_values['skor_energi'] . '/10'
+                . ', Stres ' . $input_values['stress_level'] . '/10'
+                . ', Fokus ' . $input_values['fokus_level'] . '/10'
+                . ', Pemulihan ' . $input_values['pulih_level'] . '/10',
+        ];
+        foreach ([
+            'suasana_hati' => 'Suasana hati',
+            'reaksi_tekanan' => 'Reaksi saat tertekan',
+            'kebutuhan_utama' => 'Kebutuhan utama',
+        ] as $key => $label) {
+            if (trim((string) $input_values[$key]) !== '') {
+                $checkinParts[] = $label . ': ' . trim((string) $input_values[$key]);
+            }
+        }
+        $penjelasan_energi = form_join_notes(array_merge($checkinParts, [$penjelasan_energi]));
+        if (trim((string) $input_values['cerita_singkat']) !== '') {
+            $penjelasan_energi = form_join_notes([
+                $penjelasan_energi,
+                'Cerita singkat: ' . trim((string) $input_values['cerita_singkat']),
+            ]);
+        }
+    } elseif (trim((string) $input_values['cerita_singkat']) !== '') {
+        $penjelasan_energi = form_join_notes([
+            $penjelasan_energi,
+            'Cerita singkat: ' . trim((string) $input_values['cerita_singkat']),
+        ]);
+    }
+
+    $bantuan = $input_values['bantuan_diharapkan'];
+    if ($input_values['mentor_help'] !== []) {
+        $mapBantuan = [
+            'Brainstorming' => 'Brainstorming ide',
+            'Feedback' => 'Feedback & saran',
+            'Solusi masalah' => 'Solusi masalah',
+            'Motivasi' => 'Curhat & motivasi',
+        ];
+        foreach ($input_values['mentor_help'] as $mh) {
+            $bantuan[] = $mapBantuan[$mh] ?? $mh;
+        }
+        $bantuan = array_values(array_unique($bantuan));
+    }
+    $bantuan_diharapkan = implode(', ', $bantuan);
+
+    $topik_diskusi = trim((string) $input_values['topik_diskusi']);
+    $catatan_lain = trim((string) $input_values['catatan_lain']);
+
+    // 1. Kumpulkan data refleksi untuk AI dari nilai yang sudah digabung.
     $data_refleksi_ai = [
-        'pencapaian' => $_POST['pencapaian'], 'kemajuan_tujuan' => $_POST['kemajuan_tujuan'], 'tantangan' => $_POST['tantangan'],
-        'pembelajaran_baru' => $_POST['pembelajaran_baru'], 'skor_energi' => $_POST['skor_energi'], 'penjelasan_energi' => $_POST['penjelasan_energi'],
-        'momen_berkesan' => $_POST['momen_berkesan'], 'prioritas_mingguan' => $_POST['prioritas_mingguan'], 'catatan_lain' => $_POST['catatan_lain']
+        'pencapaian' => $pencapaian,
+        'kemajuan_tujuan' => $kemajuan,
+        'tantangan' => $tantangan,
+        'pembelajaran_baru' => $pembelajaran,
+        'skor_energi' => $input_values['skor_energi'],
+        'penjelasan_energi' => $penjelasan_energi,
+        'momen_berkesan' => trim((string) $input_values['momen_berkesan']),
+        'prioritas_mingguan' => $prioritas,
+        'catatan_lain' => $catatan_lain,
     ];
-    
-    // 2. Panggil API Gemini TERLEBIH DAHULU
+
+    // 2. Panggil AI server-side (OpenRouter dulu, Gemini cadangan).
     $hasil_ai = panggilGemini($data_refleksi_ai);
 
     if (!$hasil_ai['sukses']) {
         $pesan_error = "PROSES SUBMIT DIBATALKAN. Kegagalan AI: " . htmlspecialchars($hasil_ai['error']) . " Data Anda di bawah ini aman dan tidak hilang, silakan coba submit lagi. Atau coba hubungi pembuat aplikasi ini.";
     } else {
-        // 4. Jika AI berhasil, kumpulkan semua data lain dan lakukan INSERT
+        // 3. Simpan nilai final setelah AI berhasil membuat kalimat epik.
         $kalimat_epik = $hasil_ai['kalimat'];
-        
-        $nama_mentee = $_POST['nama_mentee']; $nama_mentor = $_POST['nama_mentor'];
-        $nama_disamarkan = isset($_POST['samarkan_nama']) ? 1 : 0;
-        $sandi_nama = ($nama_disamarkan == 1 && !empty($_POST['sandi_nama'])) ? $_POST['sandi_nama'] : null;
-        if ($nama_disamarkan == 1 && $sandi_nama === null) $nama_disamarkan = 0;
-        
-        $periode_minggu_raw = trim($_POST['periode_minggu'] ?? '');
-        $periode_minggu = $periode_minggu_raw === '' ? null : (int)$periode_minggu_raw;
-        $periode_tanggal = $_POST['periode_tanggal']; $topik_diskusi = $_POST['topik_diskusi'];
-        $bantuan_diharapkan = isset($_POST['bantuan_diharapkan']) ? implode(", ", $_POST['bantuan_diharapkan']) : '';
-        $tujuan_spesifik = $_POST['tujuan_spesifik'];
-        
+
+        $nama_mentee = trim((string) $input_values['nama_mentee']);
+        $nama_mentor = trim((string) $input_values['nama_mentor']);
+        $nama_disamarkan = $input_values['samarkan_nama'] ? 1 : 0;
+        $sandi_nama = ($nama_disamarkan == 1 && !empty($input_values['sandi_nama'])) ? (string) $input_values['sandi_nama'] : null;
+        if ($nama_disamarkan == 1 && $sandi_nama === null) {
+            $nama_disamarkan = 0;
+        }
+
+        $periode_minggu_raw = trim((string) $input_values['periode_minggu']);
+        $periode_minggu = $periode_minggu_raw === '' ? null : (int) $periode_minggu_raw;
+        $periode_tanggal = trim((string) $input_values['periode_tanggal']);
+
         $sql = "INSERT INTO refleksi_mingguan (nama_mentee, nama_mentor, nama_disamarkan, sandi_nama, periode_minggu, periode_tanggal, pencapaian, kemajuan_tujuan, tantangan, pembelajaran_baru, skor_energi, penjelasan_energi, momen_berkesan, prioritas_mingguan, tujuan_spesifik, topik_diskusi, bantuan_diharapkan, catatan_lain, kalimat_epik) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssisisssssissssssss", $nama_mentee, $nama_mentor, $nama_disamarkan, $sandi_nama, $periode_minggu, $periode_tanggal, $data_refleksi_ai['pencapaian'], $data_refleksi_ai['kemajuan_tujuan'], $data_refleksi_ai['tantangan'], $data_refleksi_ai['pembelajaran_baru'], $data_refleksi_ai['skor_energi'], $data_refleksi_ai['penjelasan_energi'], $data_refleksi_ai['momen_berkesan'], $data_refleksi_ai['prioritas_mingguan'], $tujuan_spesifik, $topik_diskusi, $bantuan_diharapkan, $data_refleksi_ai['catatan_lain'], $kalimat_epik);
+        $stmt->bind_param(
+            "ssisisssssissssssss",
+            $nama_mentee, $nama_mentor, $nama_disamarkan, $sandi_nama, $periode_minggu, $periode_tanggal,
+            $pencapaian, $kemajuan, $tantangan, $pembelajaran,
+            $input_values['skor_energi'], $penjelasan_energi,
+            $data_refleksi_ai['momen_berkesan'], $prioritas, $tujuan_spesifik,
+            $topik_diskusi, $bantuan_diharapkan, $catatan_lain, $kalimat_epik
+        );
 
         if ($stmt->execute()) {
             $pesan_sukses = "Refleksi berhasil disubmit dan kalimat epik telah dibuat!";
-            // Kosongkan form setelah sukses
+            // Kosongkan form setelah sukses.
             foreach ($input_values as $key => &$value) {
                 $value = is_array($value) ? [] : '';
             }
+            unset($value);
             $input_values['samarkan_nama'] = false;
-
+            $input_values['skor_energi'] = 5;
+            $input_values['mood_level'] = 5;
+            $input_values['stress_level'] = 5;
+            $input_values['fokus_level'] = 5;
+            $input_values['pulih_level'] = 5;
+            $checkin_terisi = false;
         } else {
             $pesan_error = "Data gagal disimpan ke database. Error: " . $stmt->error;
         }
@@ -81,8 +268,10 @@ $result = $conn->query($riwayat_sql);
     <title>Formulir Refleksi Mingguan</title>
     <meta name="theme-color" content="#7f1d1d">
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="page-transition.css">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <script src="page-transition.js" defer></script>
     <script src="audio-player.js" defer></script>
     <script src="pwa-register.js" defer></script>
     <style>
@@ -236,6 +425,154 @@ $result = $conn->query($riwayat_sql);
             margin: 4px 0;
         }
 
+        .form-note {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
+
+        /* Check-in gabungan Form Interaktif + Tes Psikologi */
+        .checkin {
+            margin: 22px 0 8px;
+            padding: 18px 20px;
+            border: 2px dashed var(--outline);
+            border-radius: 24px;
+            background: #fffdf8;
+            box-shadow: 6px 8px 0 #f4c7a7;
+        }
+
+        .checkin summary {
+            cursor: pointer;
+            list-style: none;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.15rem;
+            color: var(--accent-dark);
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .checkin summary::-webkit-details-marker { display: none; }
+
+        .checkin summary::before {
+            content: '▸';
+            font-size: 1rem;
+            transition: transform 0.15s ease;
+        }
+
+        .checkin[open] summary::before { content: '▾'; }
+
+        .checkin summary span {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .checkin-help {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin: 10px 0 16px;
+        }
+
+        .checkin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .slider-field {
+            background: #fff7ed;
+            border: 2px solid var(--outline);
+            border-radius: 16px;
+            padding: 11px 13px;
+            box-shadow: 4px 5px 0 #f4c7a7;
+        }
+
+        .slider-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-head label {
+            margin: 0;
+            font-size: 0.88rem;
+            line-height: 1.2;
+        }
+
+        .slider-head output {
+            min-width: 28px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--accent-dark);
+            background: var(--accent);
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.85rem;
+        }
+
+        .slider-field input[type="range"] {
+            width: 100%;
+            margin-top: 9px;
+            accent-color: var(--accent-dark);
+            cursor: pointer;
+        }
+
+        .checkin-group { margin-top: 18px; }
+
+        .checkin-group > .group-label {
+            display: block;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+
+        .chip-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            padding: 8px 12px;
+            border: 2px solid var(--outline);
+            border-radius: 999px;
+            background: #fff7ed;
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-weight: 500;
+            line-height: 1.2;
+            cursor: pointer;
+            box-shadow: 3px 4px 0 #f4c7a7;
+        }
+
+        .chip input {
+            margin: 0;
+            accent-color: var(--accent-dark);
+        }
+
+        .chip:has(input:checked) {
+            background: var(--accent);
+        }
+
+        .checkin .mini-label {
+            margin-top: 16px;
+        }
+
+        .checkin textarea { min-height: 84px; }
+
+        @media (max-width: 520px) {
+            .checkin { padding: 15px 14px; }
+            .checkin-grid { grid-template-columns: 1fr 1fr; }
+        }
+
         button {
             background: var(--accent);
             color: var(--accent-dark);
@@ -352,8 +689,6 @@ $result = $conn->query($riwayat_sql);
     <div class="nav-links">
         <a href="index.php" class="nav-link">🏠 Dashboard</a>
         <a href="form.php" class="nav-link active">📝 Form Klasik</a>
-        <a href="form_interactive.php" class="nav-link">✨ Form Interaktif</a>
-        <a href="form_psikologi.php" class="nav-link">🧠 Tes Psikologi</a>
         <a href="form_bebas.php" class="nav-link">🪶 Form Bebas</a>
         <a href="#tabel-riwayat" class="nav-link">🔎 Detail</a>
     </div>
@@ -361,7 +696,7 @@ $result = $conn->query($riwayat_sql);
     <!-- <a href="index.php" class="dashboard-link">⬅️ Kembali ke Dashboard Kartu Epik</a> -->
 
     <h1>Formulir Refleksi Mingguan UKMI</h1>
-    <p class="subtitle">Yuk ceritakan perjalananmu minggu ini! 🌟</p>
+    <p class="subtitle">Yuk ceritakan perjalananmu minggu ini! 🌟 Form Klasik kini sudah menyatukan check-in interaktif dan tes psikologi singkat.</p>
 
     <?php if (!empty($pesan_sukses)): ?>
         <div class="success-message"><?php echo htmlspecialchars($pesan_sukses); ?></div>
@@ -392,7 +727,143 @@ $result = $conn->query($riwayat_sql);
         
         <label for="periode_tanggal">Tanggal Periode</label>
         <input type="text" id="periode_tanggal" name="periode_tanggal" placeholder="cth: 12 Agu - 18 Agu 2025" required value="<?php echo htmlspecialchars($input_values['periode_tanggal']); ?>">
-        
+
+        <details class="checkin" <?php echo $checkin_terisi ? 'open' : ''; ?>>
+            <summary>🧩 Check-in &amp; Refleksi Terbimbing <span>(opsional)</span></summary>
+            <p class="checkin-help">
+                Isi bagian ini kalau kamu ingin cara cepat seperti Form Interaktif atau Tes Psikologi.
+                Semua isinya otomatis digabung ke kolom refleksi di bawah, jadi tidak ada data yang hilang.
+            </p>
+
+            <div class="checkin-grid">
+                <div class="slider-field">
+                    <div class="slider-head"><label for="skor_energi">Energi</label><output id="skor_energi_output"><?php echo (int) $input_values['skor_energi']; ?></output></div>
+                    <input type="range" id="skor_energi" name="skor_energi" min="1" max="10" step="1" value="<?php echo (int) $input_values['skor_energi']; ?>">
+                </div>
+                <div class="slider-field">
+                    <div class="slider-head"><label for="mood_level">Mood</label><output id="mood_level_output"><?php echo (int) $input_values['mood_level']; ?></output></div>
+                    <input type="range" id="mood_level" name="mood_level" min="1" max="10" step="1" value="<?php echo (int) $input_values['mood_level']; ?>">
+                </div>
+                <div class="slider-field">
+                    <div class="slider-head"><label for="stress_level">Stres</label><output id="stress_level_output"><?php echo (int) $input_values['stress_level']; ?></output></div>
+                    <input type="range" id="stress_level" name="stress_level" min="1" max="10" step="1" value="<?php echo (int) $input_values['stress_level']; ?>">
+                </div>
+                <div class="slider-field">
+                    <div class="slider-head"><label for="fokus_level">Fokus</label><output id="fokus_level_output"><?php echo (int) $input_values['fokus_level']; ?></output></div>
+                    <input type="range" id="fokus_level" name="fokus_level" min="1" max="10" step="1" value="<?php echo (int) $input_values['fokus_level']; ?>">
+                </div>
+                <div class="slider-field">
+                    <div class="slider-head"><label for="pulih_level">Pemulihan</label><output id="pulih_level_output"><?php echo (int) $input_values['pulih_level']; ?></output></div>
+                    <input type="range" id="pulih_level" name="pulih_level" min="1" max="10" step="1" value="<?php echo (int) $input_values['pulih_level']; ?>">
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Suasana hati</span>
+                <div class="chip-grid">
+                    <?php foreach ($suasana_options as $option): ?>
+                        <label class="chip">
+                            <input type="radio" name="suasana_hati" value="<?php echo htmlspecialchars($option); ?>" <?php echo $input_values['suasana_hati'] === $option ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Saat tertekan, kamu biasanya...</span>
+                <div class="chip-grid">
+                    <?php foreach ($reaksi_options as $option): ?>
+                        <label class="chip">
+                            <input type="radio" name="reaksi_tekanan" value="<?php echo htmlspecialchars($option); ?>" <?php echo $input_values['reaksi_tekanan'] === $option ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Yang paling kamu butuhkan</span>
+                <div class="chip-grid">
+                    <?php foreach ($kebutuhan_options as $option): ?>
+                        <label class="chip">
+                            <input type="radio" name="kebutuhan_utama" value="<?php echo htmlspecialchars($option); ?>" <?php echo $input_values['kebutuhan_utama'] === $option ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Pencapaian (pilih yang sesuai)</span>
+                <div class="chip-grid">
+                    <?php foreach ($achievement_tag_options as $option): ?>
+                        <label class="chip">
+                            <input type="checkbox" name="achievement_tags[]" value="<?php echo htmlspecialchars($option); ?>" <?php echo in_array($option, $input_values['achievement_tags'], true) ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Tantangan</span>
+                <div class="chip-grid">
+                    <?php foreach ($challenge_tag_options as $option): ?>
+                        <label class="chip">
+                            <input type="checkbox" name="challenge_tags[]" value="<?php echo htmlspecialchars($option); ?>" <?php echo in_array($option, $input_values['challenge_tags'], true) ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Pembelajaran</span>
+                <div class="chip-grid">
+                    <?php foreach ($learning_tag_options as $option): ?>
+                        <label class="chip">
+                            <input type="checkbox" name="learning_tags[]" value="<?php echo htmlspecialchars($option); ?>" <?php echo in_array($option, $input_values['learning_tags'], true) ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Fokus minggu depan</span>
+                <div class="chip-grid">
+                    <?php foreach ($next_week_focus_options as $option): ?>
+                        <label class="chip">
+                            <input type="checkbox" name="next_week_focus[]" value="<?php echo htmlspecialchars($option); ?>" <?php echo in_array($option, $input_values['next_week_focus'], true) ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="checkin-group">
+                <span class="group-label">Bantuan mentor yang diinginkan</span>
+                <div class="chip-grid">
+                    <?php foreach ($mentor_help_options as $option): ?>
+                        <label class="chip">
+                            <input type="checkbox" name="mentor_help[]" value="<?php echo htmlspecialchars($option); ?>" <?php echo in_array($option, $input_values['mentor_help'], true) ? 'checked' : ''; ?>>
+                            <span><?php echo htmlspecialchars($option); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <label class="mini-label" for="pemicu_utama">Pemicu utama (opsional)</label>
+            <textarea id="pemicu_utama" name="pemicu_utama" placeholder="Apa yang paling memicu perasaan atau kondisi minggu ini?"><?php echo htmlspecialchars($input_values['pemicu_utama']); ?></textarea>
+
+            <label class="mini-label" for="cerita_singkat">Cerita singkat (opsional)</label>
+            <textarea id="cerita_singkat" name="cerita_singkat" placeholder="Ringkasan singkat tentang apa yang kamu rasakan minggu ini..."><?php echo htmlspecialchars($input_values['cerita_singkat']); ?></textarea>
+
+            <label class="mini-label" for="langkah_kecil">Langkah kecil berikutnya (opsional)</label>
+            <textarea id="langkah_kecil" name="langkah_kecil" placeholder="Contoh: tidur lebih awal, membatasi distraksi, atau ngobrol dengan orang terpercaya..."><?php echo htmlspecialchars($input_values['langkah_kecil']); ?></textarea>
+        </details>
+
         <hr>
         <h3>✨ Pencapaian Minggu Ini</h3>
         <label for="pencapaian">Apa pencapaian atau hal baik yang sudah kamu lakukan minggu ini?</label>
@@ -411,10 +882,9 @@ $result = $conn->query($riwayat_sql);
         
         <hr>
         <h3>⚡ Kondisi & Perasaan</h3>
-        <label for="skor_energi">Tingkat Semangat & Motivasi (1-10)</label>
-        <input type="number" id="skor_energi" name="skor_energi" min="1" max="10" required placeholder="1 = Sangat rendah, 10 = Sangat tinggi" value="<?php echo htmlspecialchars($input_values['skor_energi']); ?>">
-        
-        <label for="penjelasan_energi">Kenapa kamu kasih skor segitu? Apa yang bikin semangat atau justru menurun?</label>
+        <p class="form-note">Skor energi diatur lewat slider <strong>Energi</strong> pada bagian Check-in di atas.</p>
+
+        <label for="penjelasan_energi">Kenapa kamu memberi skor energi <?php echo (int) $input_values['skor_energi']; ?>/10? Apa yang bikin semangat atau justru menurun?</label>
         <textarea id="penjelasan_energi" name="penjelasan_energi" required placeholder="Ceritakan kondisi dan perasaanmu minggu ini"><?php echo htmlspecialchars($input_values['penjelasan_energi']); ?></textarea>
         
         <label for="momen_berkesan">Ceritakan 1 momen yang paling berkesan minggu ini</label>
@@ -490,6 +960,15 @@ document.getElementById('samarkan_nama').addEventListener('change', function() {
         kolomSandi.style.display = 'none';
         inputSandi.required = false;
     }
+});
+
+// Tampilkan nilai slider check-in secara langsung.
+document.querySelectorAll('.slider-field input[type="range"]').forEach(function(slider) {
+    var output = document.getElementById(slider.id + '_output');
+    if (!output) return;
+    var update = function() { output.textContent = slider.value; };
+    slider.addEventListener('input', update);
+    update();
 });
 </script>
 
