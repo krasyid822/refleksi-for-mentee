@@ -14,6 +14,7 @@ Lalu isi nilai berikut di `.env`:
 
 | Variabel         | Keterangan                                              |
 | ---------------- | ------------------------------------------------------- |
+| `APP_TIMEZONE`   | Zona waktu PHP & sesi MySQL, default `Asia/Jakarta`      |
 | `DB_SERVER`      | Host database, mis. `localhost`                         |
 | `DB_USERNAME`    | Username database                                       |
 | `DB_PASSWORD`    | Password database                                       |
@@ -27,6 +28,8 @@ Lalu isi nilai berikut di `.env`:
 | `FTP_SYNCROOT`   | Sub-folder tujuan FTP (opsional)                        |
 
 Jika variabel environment sudah diatur di server (Apache/Nginx), nilai tersebut akan diprioritaskan dibanding isi `.env`.
+
+`APP_TIMEZONE` diterapkan ke PHP dan sesi MySQL (`SET time_zone`), sehingga `NOW()`/`CURRENT_TIMESTAMP` konsisten dengan waktu PHP. Kartu "Waktu Sekarang" menampilkan rincian PHP/MySQL/pengguna hanya jika waktu atau zonanya belum sinkron.
 
 ### Database lokal (`.env.local`)
 

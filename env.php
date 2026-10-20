@@ -114,6 +114,11 @@ if (!defined('APP_BOOTSTRAPPED')) {
     loadEnv(__DIR__ . '/.env');
     loadEnv(__DIR__ . '/.env.local', true);
 
+    // --- Zona waktu aplikasi ---
+    // Menentukan zona waktu PHP sekaligus zona waktu sesi MySQL.
+    define('APP_TIMEZONE', env('APP_TIMEZONE', 'Asia/Jakarta'));
+    date_default_timezone_set(APP_TIMEZONE);
+
     // --- Pengaturan Database ---
     define('DB_SERVER', env('DB_SERVER', 'localhost'));
     define('DB_USERNAME', env('DB_USERNAME', ''));
@@ -133,4 +138,8 @@ if (!defined('APP_BOOTSTRAPPED')) {
         die("Koneksi ke database gagal: " . $conn->connect_error);
     }
     $conn->set_charset("utf8mb4");
+
+    // Samakan zona waktu sesi MySQL dengan PHP agar NOW()/TIMESTAMP konsisten.
+    $offset = date('P');
+    @$conn->query("SET time_zone = '" . $conn->real_escape_string($offset) . "'");
 }

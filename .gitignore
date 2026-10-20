@@ -2,11 +2,12 @@
 .env
 .env.local
 
-# Dump / backup database (jangan masuk repo)
+# Dump / backup database & arsip (jangan masuk repo)
 *.sql.zip
 *.sql.gz
 *.dump
 *.dump.sql
+*.zip
 
 # File sistem
 .DS_Store

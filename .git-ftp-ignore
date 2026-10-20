@@ -19,8 +19,9 @@ FORMAT_DATABASE.sql
 .env.local
 .env.local.example
 
-# Dump / backup database
+# Dump / backup database & arsip
 *.sql.zip
 *.sql.gz
 *.dump
 *.dump.sql
+*.zip

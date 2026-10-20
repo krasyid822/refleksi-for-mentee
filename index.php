@@ -2,8 +2,6 @@
 require_once 'env.php';
 require_once 'clock_helper.php';
 
-date_default_timezone_set("Asia/Jakarta");
-$zona_waktu = date_default_timezone_get();
 // Waktu server (PHP & MySQL) untuk kartu "Waktu Sekarang".
 $waktu = baca_waktu_server($conn);
 
@@ -236,10 +234,27 @@ if ($search_query !== '') {
         .cmp-delta.warn { background: rgba(251, 191, 36, 0.16); color: #fcd34d; }
         .cmp-delta.bad  { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
 
-        .clock-note {
-            margin-top: 10px;
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.45);
+        .cmp-zone.bad {
+            color: #fca5a5;
+        }
+
+        /* Sembunyikan rincian bila waktu & zona ketiganya sudah sinkron. */
+        .meta-card.synced .clock-compare {
+            display: none;
+        }
+
+        .clock-status {
+            margin-top: 12px;
+            font-size: 0.74rem;
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        .clock-status.ok {
+            color: #86efac;
+        }
+
+        .clock-status.warn {
+            color: #fcd34d;
         }
 
         .search-form {
@@ -451,7 +466,7 @@ if ($search_query !== '') {
     </div>
 
     <div class="meta-row">
-        <div class="meta-card">
+        <div class="meta-card" id="kartu-waktu">
             <span class="label">Waktu Sekarang</span>
             <div class="clock">
                 <div class="clock-face" role="img" aria-label="Jam analog waktu server PHP, zona waktu <?php echo htmlspecialchars($waktu['php']['tz']); ?>">
@@ -462,7 +477,7 @@ if ($search_query !== '') {
                 </div>
                 <div class="clock-info">
                     <div class="clock-digital" id="jam-digital"><?php echo htmlspecialchars($waktu['php']['time']); ?></div>
-                    <div class="clock-zone">PHP · <span id="zona-php"><?php echo htmlspecialchars($waktu['php']['tz']); ?></span></div>
+                    <div class="clock-zone">PHP · <span id="zona-php"><?php echo htmlspecialchars($waktu['php']['tz']); ?></span> · <?php echo htmlspecialchars($waktu['php']['offset_label']); ?></div>
                 </div>
             </div>
             <ul class="clock-compare">
@@ -479,7 +494,7 @@ if ($search_query !== '') {
                     <span class="cmp-delta" id="selisih-user">—</span>
                 </li>
             </ul>
-            <div class="clock-note" id="clock-note">Selisih diukur terhadap jam server PHP.</div>
+            <div class="clock-status" id="clock-status">Memeriksa sinkronisasi waktu &amp; zona…</div>
         </div>
         <div class="search-card">
             <span class="label">Pencarian</span>
@@ -530,6 +545,7 @@ if ($search_query !== '') {
 
     <script>
         (function () {
+            var card = document.getElementById('kartu-waktu');
             var hourHand = document.getElementById('jam-jam');
             var minuteHand = document.getElementById('jam-menit');
             var secondHand = document.getElementById('jam-detik');
@@ -541,13 +557,18 @@ if ($search_query !== '') {
             var userTime = document.getElementById('jam-user');
             var userZone = document.getElementById('zona-user');
             var userDelta = document.getElementById('selisih-user');
-            var note = document.getElementById('clock-note');
+            var status = document.getElementById('clock-status');
 
-            if (!hourHand || !minuteHand || !secondHand) return;
+            if (!card || !hourHand || !minuteHand || !secondHand) return;
 
             // Waktu server saat halaman dibuat (sumber jam, bukan jam browser).
             var initialServerMs = <?php echo (int) $waktu['php']['epoch_ms']; ?>;
             var serverOffsetMs = initialServerMs - Date.now();
+
+            var phpOffset = <?php echo (int) $waktu['php']['offset']; ?>;
+            var latestPhpEpoch = <?php echo json_encode((float) $waktu['php']['epoch']); ?>;
+            var latestMysqlEpoch = <?php echo json_encode($waktu['mysql'] ? (int) $waktu['mysql']['epoch'] : null); ?>;
+            var latestMysqlOffset = <?php echo json_encode($waktu['mysql'] ? (int) $waktu['mysql']['utc_offset'] : null); ?>;
 
             var phpFormat = new Intl.DateTimeFormat('en-GB', {
                 timeZone: <?php echo json_encode($waktu['php']['tz']); ?>,
@@ -564,6 +585,13 @@ if ($search_query !== '') {
                 hour12: false
             });
 
+            var userTzName = 'lokal';
+            try {
+                userTzName = Intl.DateTimeFormat().resolvedOptions().timeZone || 'lokal';
+            } catch (e) {
+                userTzName = 'lokal';
+            }
+
             var mysqlState = null;
             var initialMysql = <?php echo json_encode($waktu['mysql'] ? [
                 'time'  => $waktu['mysql']['time'],
@@ -578,18 +606,25 @@ if ($search_query !== '') {
                 };
             }
 
-            try {
-                userZone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || 'lokal';
-            } catch (e) {
-                userZone.textContent = 'lokal';
-            }
-
             function pad2(value) {
                 return String(value).padStart(2, '0');
             }
 
             function serverNowMs() {
                 return Date.now() + serverOffsetMs;
+            }
+
+            function userOffset() {
+                return -new Date().getTimezoneOffset() * 60;
+            }
+
+            function labelOffset(seconds) {
+                if (seconds === null || seconds === undefined || isNaN(seconds)) {
+                    return '?';
+                }
+                var sign = seconds < 0 ? '-' : '+';
+                var abs = Math.abs(seconds);
+                return 'UTC' + sign + pad2(Math.floor(abs / 3600)) + ':' + pad2(Math.floor((abs % 3600) / 60));
             }
 
             function ambilBagianWaktu(date, formatter) {
@@ -631,6 +666,62 @@ if ($search_query !== '') {
                 el.className = 'cmp-delta ' + kelasSelisih(d);
             }
 
+            function selisihMysql() {
+                if (latestMysqlEpoch === null) return null;
+                return latestMysqlEpoch - latestPhpEpoch;
+            }
+
+            function selisihUser() {
+                return (Date.now() - serverNowMs()) / 1000;
+            }
+
+            function zonaSinkron() {
+                return latestMysqlOffset !== null
+                    && latestMysqlOffset === phpOffset
+                    && userOffset() === phpOffset;
+            }
+
+            function waktuSinkron() {
+                var dMysql = selisihMysql();
+                if (dMysql === null) return false;
+                return Math.abs(Math.round(dMysql)) <= 2
+                    && Math.abs(Math.round(selisihUser())) <= 2;
+            }
+
+            function perbaruiStatus() {
+                var sinkronZona = zonaSinkron();
+                var sinkronWaktu = waktuSinkron();
+                var sinkron = sinkronZona && sinkronWaktu;
+
+                // Rincian hanya ditampilkan bila ada yang belum sinkron.
+                card.classList.toggle('synced', sinkron);
+
+                if (sinkron) {
+                    status.textContent = '✓ PHP, MySQL, dan zona waktu sinkron';
+                    status.className = 'clock-status ok';
+                    return;
+                }
+
+                var masalah = [];
+
+                if (latestMysqlOffset === null) {
+                    masalah.push('waktu MySQL tidak tersedia');
+                } else if (!sinkronZona) {
+                    masalah.push(
+                        'zona berbeda: PHP ' + labelOffset(phpOffset)
+                        + ' · MySQL ' + labelOffset(latestMysqlOffset)
+                        + ' · Anda ' + labelOffset(userOffset())
+                    );
+                }
+
+                if (!sinkronWaktu && latestMysqlEpoch !== null) {
+                    masalah.push('selisih waktu > 2 dtk');
+                }
+
+                status.textContent = '⚠ ' + masalah.join(' · ');
+                status.className = 'clock-status warn';
+            }
+
             function renderPhp() {
                 var now = new Date(serverNowMs());
                 var t = ambilBagianWaktu(now, phpFormat);
@@ -658,13 +749,21 @@ if ($search_query !== '') {
                 var t = ambilBagianWaktu(now, userFormat);
 
                 userTime.textContent = pad2(t.hour) + ':' + pad2(t.minute) + ':' + pad2(t.second);
-                setSelisih(userDelta, (now.getTime() - serverNowMs()) / 1000);
+                userZone.textContent = userTzName + ' (' + labelOffset(userOffset()) + ')';
+                userZone.title = userTzName;
+
+                mysqlZone.classList.toggle('bad', latestMysqlOffset !== null && latestMysqlOffset !== phpOffset);
+                userZone.classList.toggle('bad', userOffset() !== phpOffset);
+
+                setSelisih(mysqlDelta, selisihMysql());
+                setSelisih(userDelta, selisihUser());
             }
 
             function renderAll() {
                 renderPhp();
                 renderMysql();
                 renderUser();
+                perbaruiStatus();
             }
 
             function syncTime() {
@@ -681,6 +780,8 @@ if ($search_query !== '') {
                         if (data.php && data.php.epoch) {
                             // Kompensasi latensi jaringan (asumsi simetris).
                             serverOffsetMs = (data.php.epoch * 1000) - ((started + finished) / 2);
+                            latestPhpEpoch = data.php.epoch;
+                            phpOffset = data.php.offset;
                         }
 
                         if (data.php && data.php.tz && zonaPhp) {
@@ -693,22 +794,24 @@ if ($search_query !== '') {
                                 baseSeconds: parseInt(p[0], 10) * 3600 + parseInt(p[1], 10) * 60 + parseInt(p[2], 10),
                                 baseAt: data.php.epoch * 1000
                             };
+                            latestMysqlEpoch = data.mysql.epoch;
+                            latestMysqlOffset = data.mysql.utc_offset;
                             mysqlZone.textContent = data.mysql.tz_label || data.mysql.tz || '—';
                             mysqlZone.title = data.mysql.tz || '';
-                            setSelisih(mysqlDelta, data.mysql.epoch - data.php.epoch);
-                            note.textContent = 'Sumber jam: PHP & MySQL server. Diperbarui otomatis.';
                         } else {
                             mysqlState = null;
+                            latestMysqlEpoch = null;
+                            latestMysqlOffset = null;
                             mysqlTime.textContent = '—';
                             mysqlZone.textContent = 'tidak tersedia';
-                            setSelisih(mysqlDelta, null);
-                            note.textContent = 'Waktu MySQL tidak tersedia.';
+                            mysqlZone.classList.remove('bad');
                         }
 
                         renderAll();
                     })
                     .catch(function () {
-                        note.textContent = 'Gagal membaca waktu server; menampilkan data awal.';
+                        status.textContent = '⚠ Gagal membaca waktu server; menampilkan data awal.';
+                        status.className = 'clock-status warn';
                     });
             }
 
